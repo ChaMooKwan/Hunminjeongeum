@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight //FontWeight.Bold,Normal 등 텍
 import androidx.compose.ui.unit.sp //사용자 폰트 크기 설정에 반영
 import kotlinx.coroutines.delay //시간 확인 -> 서버 처리 할거라 쓸모 없음
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.background // 오버레이 화면 띄우고, alpha를 사요해 게임 화면 창 원하는 정도로 흐릿하게 하기
 
 //해야할 일: 1. 시간이 종료 될 시 종료 문구와 totalRound와 사용자가 맞춘 점수 대비해서 n/totalRound로 표기
 //n을 정의할 수 -> 맞은 횟수 변수 필요(n) -> 변수명 correct로 할 것
@@ -38,10 +39,10 @@ fun mainScreen() {
 fun GameScreen(
     // 게임 로직 담당자에게 받는 데이터
     //더미데이터는 실제 실행 시 지울 것
-    playerList: List<Pair<String, Int>> = listOf(
-        Pair("이동욱", 0),
-        Pair("이리듐", 150),
-        Pair("나트륨", 300)
+    playerList: List<Triple<String, Int, Int>> = listOf(
+        Triple("이동욱", 0, 0),
+        Triple("이리듐", 150, 1),
+        Triple("나트륨", 300, 2)
     ), // 더미, 나중에 실제 데이터로 교체
     quizCategory: String = "동물", //더미, 문제 카테고리
     wordCase: String = "ㄱㅇㅇ", // 더미, 문제 초성
@@ -49,6 +50,7 @@ fun GameScreen(
     totalRound: Int = 5, // 더미, 총 판 수
     timer: Int = 30, // 더미, 실제 서버 시간에서 받아올 것
     chat: String = "", // 게임 로직에서 하나씩 전달
+    isGameOver: Boolean = false, // 게임 종료 시 true
 
     // AI 프롬프트 담당자에게 받는 데이터
     wordHint: String = "ㄱ양ㅇ",  //더미, 초성 힌트가 들어올 시 문제 업데이트용
@@ -59,6 +61,19 @@ fun GameScreen(
     val chatList = remember { mutableStateListOf("안녕", "이거 강아지 아님?") } // 더미
     val sortedPlayerList = playerList.sortedByDescending { it.second } //내림차순 정렬로 큰 수가 위로 가게 정렬
     val currentWord = if (wordHint.isEmpty()) wordCase else wordHint //힌트가 들어온다면 wordHint, 아니면 처음 초성인 wordCase표시
+    // ============================================================
+    // //GameOver로직이 잘 작동되는지 확인하기 위한 더미 기믹 - 구현 시 삭제
+    var dummyGameOver by remember{mutableStateOf(false)}
+    var timeLeft by remember { mutableStateOf(30) }
+
+    LaunchedEffect(Unit) {
+        while (timeLeft > 0) {
+            delay(1000L)
+            timeLeft--
+        }
+        dummyGameOver = true  // ← 0초 되면 자동으로 GameOver
+    }
+    // ============================================================
 
     //채팅 입력 시(값이 바뀜 = 입력) 실행
     LaunchedEffect(chat) {
@@ -67,77 +82,94 @@ fun GameScreen(
         }
     }
 
-    Row(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            // 좌측 - 플레이어 목록
+            Column(
+                modifier = Modifier
+                    .weight(0.2f) //20% 차지
+                    .fillMaxHeight() //세로 최대 차지
+                    .border(1.dp, Color.Black) //테두리 검정
+            ) {
+                sortedPlayerList.forEach { (name, score, correct) ->
+                    PlayerCard(name = name, score = score) //카드에 삽입 및 추가
+                }
+            } // ← 좌측 Column 닫힘
 
-        // 좌측 - 플레이어 목록
-        Column(
-            modifier = Modifier
-                .weight(0.2f) //20% 차지
-                .fillMaxHeight() //세로 최대 차지
-                .border(1.dp, Color.Black) //테두리 검정
-        ) {
-            sortedPlayerList.forEach { (name, score) ->
-                PlayerCard(name = name, score = score) //카드에 삽입 및 추가
+            // 중앙 - 게임 영역
+            Column(
+                modifier = Modifier
+                    .weight(0.6f)
+                    .fillMaxHeight()
+                    .border(1.dp, Color.Black)
+            ) {
+                RoundDisplay( //라운드 표시
+                    countRound = countRound
+                )
+
+                TimerDisplay(timer = timeLeft) // 시간 표시, 현재 더미용 timeLeft로 시간 확인 나중에 timer로 복구할것
+
+                WordDisplay( //문제 표시
+                    modifier = Modifier
+                        .weight(3f)
+                        .fillMaxWidth(),
+                    word = currentWord //처음엔 초성, 그 후로는 초성힌트로 업데이트
+                )
+
+                CategoryDisplay( //카테고리 표시
+                    modifier = Modifier
+                        .weight(0.4f)
+                        .fillMaxWidth(),
+                    quizCategory = quizCategory
+                )
+
+                HintDisplay(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    easyQuizHint = easyQuizHint, // 초성 힌트는 정답지에 표시할 것
+                    normalQuizHint = normalQuizHint
+                )
+
+                WordInput(
+                    input = input,
+                    onInputChange = { input = it }
+                )
+            } // 중앙 끝
+
+            // 우측 - 채팅 목록
+            ChatList(
+                chatList = chatList,
+                modifier = Modifier
+                    .weight(0.2f)
+                    .fillMaxHeight()
+                    .border(1.dp, Color.Gray)
+            )
+        } // 우측 끝
+        if(dummyGameOver){ //나중에 isGameOver로 변경해야함
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.7f)), //반투명 화면정도 조절
+                contentAlignment = Alignment.Center
+            ){
+                GameOver(
+                    playerList = playerList,
+                    totalRound = totalRound,
+                    onConfirm = {dummyGameOver = false }
+                )
             }
-        } // ← 좌측 Column 닫힘
-
-        // 중앙 - 게임 영역
-        Column(
-            modifier = Modifier
-                .weight(0.6f)
-                .fillMaxHeight()
-                .border(1.dp, Color.Black)
-        ) {
-            RoundDisplay( //라운드 표시
-                countRound = countRound
-            )
-
-            TimerDisplay(timer = timer) //시간 표시
-
-            WordDisplay( //문제 표시
-                modifier = Modifier
-                    .weight(3f)
-                    .fillMaxWidth(),
-                word = currentWord //처음엔 초성, 그 후로는 초성힌트로 업데이트
-            )
-
-            CategoryDisplay( //카테고리 표시
-                modifier = Modifier
-                    .weight(0.5f)
-                    .fillMaxWidth(),
-                quizCategory = quizCategory)
-
-            HintDisplay(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                easyQuizHint = easyQuizHint, // 초성 힌트는 정답지에 표시할 것
-                normalQuizHint = normalQuizHint
-            )
-
-            WordInput(
-                input = input,
-                onInputChange = { input = it }
-            )
-        } // 중앙 끝
-
-        // 우측 - 채팅 목록
-        ChatList(
-            chatList = chatList,
-            modifier = Modifier
-                .weight(0.2f)
-                .fillMaxHeight()
-                .border(1.dp, Color.Gray)
-        )
-    } // 우측 끝
+        }
+    }
 }
 
-// =====================
+    // =====================
 // 플레이어 카드
 // 이름 + 점수 표시
 // =====================
 @Composable
-fun PlayerCard( //사용자 UI 설정
+fun PlayerCard(
+//사용자 UI 설정
     name: String, //사용자명
     score: Int = 0, //사용자 점수
 ) {
@@ -148,7 +180,7 @@ fun PlayerCard( //사용자 UI 설정
             .padding(4.dp), //사이간격: 4
         border = BorderStroke(1.dp, Color.Black), //테두리
         shape = RectangleShape //사각형으로 카드 Radius 변경
-    ) {
+        ){
         Text(
             text = "$name 점수: $score",
             modifier = Modifier.padding(8.dp)
@@ -254,38 +286,40 @@ fun HintDisplay(
     easyQuizHint: String = "", // 기본값 빈 문자열
     normalQuizHint: String = ""
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(30.dp),
-        border = BorderStroke(1.dp, Color.Black),
-        shape = RectangleShape
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+    Column(modifier = modifier){
+        Card(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            border = BorderStroke(1.dp, Color.Black),
+            shape = RectangleShape
         ) {
-            Text(
-                text = easyQuizHint, // 받아온 힌트 표시
-                modifier = Modifier.padding(8.dp)
-            )
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = easyQuizHint, // 받아온 힌트 표시
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
         }
-    }
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(30.dp),
-        border = BorderStroke(1.dp, Color.Black),
-        shape = RectangleShape
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+        Card(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            border = BorderStroke(1.dp, Color.Black),
+            shape = RectangleShape
         ) {
-            Text(
-                text = normalQuizHint, // 받아온 힌트 표시
-                modifier = Modifier.padding(8.dp)
-            )
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = normalQuizHint, // 받아온 힌트 표시
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
         }
     }
 }
@@ -334,6 +368,53 @@ fun ChatList(
                     text = chat,
                     modifier = Modifier.padding(8.dp)
                 )
+            }
+        }
+    }
+}
+
+// =====================
+// 최종 점수 화면
+// 게임 종료 시 표시
+// =====================
+@Composable
+fun GameOver(
+    // 게임 로직에서 받아올 것
+    playerList: List<Triple<String, Int, Int>>, // 이름, 맞힌 수
+    totalRound: Int, // 총 문제 수
+    onConfirm: () -> Unit // 확인 버튼 클릭
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth(0.5f)
+            .fillMaxHeight(0.5f),
+        border = BorderStroke(1.dp, Color.Black),
+        shape = RectangleShape
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp), //전체 화면 채우기 수정해야함 작은 화면에 표시할 에정
+            horizontalAlignment = Alignment.CenterHorizontally, //중앙 표시
+            verticalArrangement = Arrangement.Center // 중앙표시 2
+        ) {
+            Text(
+                text = "게임 종료!",
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(16.dp) //중앙으로 변경할 예정
+            )
+            // 플레이어별 결과 표시
+            playerList.forEach { (name, score, correct) ->
+                Text(
+                    text = "$name : $correct / $totalRound\n 점수: $score", //이동욱: 3 / 10, 밑에는 점수:150 으로 표현
+                    modifier = Modifier.padding(8.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+            // 확인 버튼
+            Button(onClick = onConfirm) {
+                Text("확인")
             }
         }
     }
