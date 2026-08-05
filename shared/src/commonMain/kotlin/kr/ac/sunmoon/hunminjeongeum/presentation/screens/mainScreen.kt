@@ -14,13 +14,17 @@ import androidx.compose.ui.graphics.Color //모든 색상 설정에 사용
 import androidx.compose.ui.unit.dp //화면 해상도가 달라져도 일정한 크기 유지
 import androidx.compose.ui.graphics.RectangleShape //자동으로 둥글기 설정된 거 사각형으로 수정
 import androidx.compose.foundation.layout.Box //Box에서 Alignment.Center 와 같이 정렬
+import androidx.compose.material3.Button //Button(onClik)과 같이 버튼 생성 및 클릭 시 호환 로직
 import androidx.compose.material3.OutlinedTextFieldDefaults //focused, unfocused로 입력창을 클릭 시/평소 테두리 설정
 import androidx.compose.ui.Alignment //Box, Column, Row 등 정렬 방향 설정
 import androidx.compose.ui.text.font.FontWeight //FontWeight.Bold,Normal 등 텍스트 굵기 설정
 import androidx.compose.ui.unit.sp //사용자 폰트 크기 설정에 반영
-import kotlinx.coroutines.delay //시간 확인
+import kotlinx.coroutines.delay //시간 확인 -> 서버 처리 할거라 쓸모 없음
 import androidx.compose.ui.text.style.TextAlign
 
+//해야할 일: 1. 시간이 종료 될 시 종료 문구와 totalRound와 사용자가 맞춘 점수 대비해서 n/totalRound로 표기
+//n을 정의할 수 -> 맞은 횟수 변수 필요(n) -> 변수명 correct로 할 것
+//전체적인 색상변경 및 디자인 변경이 필요함
 @Composable
 fun mainScreen() {
     GameScreen()
@@ -33,39 +37,33 @@ fun mainScreen() {
 @Composable
 fun GameScreen(
     // 게임 로직 담당자에게 받는 데이터
+    //더미데이터는 실제 실행 시 지울 것
     playerList: List<Pair<String, Int>> = listOf(
         Pair("이동욱", 0),
         Pair("이리듐", 150),
         Pair("나트륨", 300)
     ), // 더미, 나중에 실제 데이터로 교체
-    category: String = "동물", //더미, 문제 카테고리
+    quizCategory: String = "동물", //더미, 문제 카테고리
     wordCase: String = "ㄱㅇㅇ", // 더미, 문제 초성
     countRound: Int = 1, // 더미, 현재 판 수
     totalRound: Int = 5, // 더미, 총 판 수
+    timer: Int = 30, // 더미, 실제 서버 시간에서 받아올 것
     chat: String = "", // 게임 로직에서 하나씩 전달
 
     // AI 프롬프트 담당자에게 받는 데이터
     wordHint: String = "ㄱ양ㅇ",  //더미, 초성 힌트가 들어올 시 문제 업데이트용
-    quizHint: String = "줄무늬가 있고, 주로 나비라고 불립니다" //더미, 특성 힌트가 들어올 시 삽입됨
+    easyQuizHint: String = "줄무늬가 있고, 주로 나비라고 불립니다", //더미, 쉬움 특성 힌트가 들어올 시 삽입됨
+    normalQuizHint: String = "육식동물이며 사회안에 녹아들어있습니다" //더미, 중간 특성 힌트가 들어올 시 삽입함
 ) {
     var input by remember { mutableStateOf("") }
     val chatList = remember { mutableStateListOf("안녕", "이거 강아지 아님?") } // 더미
     val sortedPlayerList = playerList.sortedByDescending { it.second } //내림차순 정렬로 큰 수가 위로 가게 정렬
     val currentWord = if (wordHint.isEmpty()) wordCase else wordHint //힌트가 들어온다면 wordHint, 아니면 처음 초성인 wordCase표시
-    var timer by remember { mutableStateOf(30) } //제한시간 30초 설정
 
     //채팅 입력 시(값이 바뀜 = 입력) 실행
     LaunchedEffect(chat) {
         if (chat.isNotEmpty()) { //빈 채팅 여부
             chatList.add(chat)
-        }
-    }
-
-    //타이머가 0초일 시 종료
-    LaunchedEffect(Unit) {
-        while (timer > 0) {
-            delay(1000L) //1초마다(Long타입)
-            timer-- //타이머 1초 감소
         }
     }
 
@@ -90,54 +88,38 @@ fun GameScreen(
                 .fillMaxHeight()
                 .border(1.dp, Color.Black)
         ) {
-            //상단 시간 표시
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(8.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "$countRound / $totalRound",
-                    modifier = Modifier.weight(1f)
-                )
-                // 시간 중앙
-                Text(
-                    text = "⏱ ${timer}초",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center
-                )
-                // 우측 빈칸 (좌우 균형)
-                Text(
-                    text = "",
-                    modifier = Modifier.weight(1f)
-                )
-            } // ← Row 닫힘
+            RoundDisplay( //라운드 표시
+                countRound = countRound
+            )
 
-            WordDisplay(
+            TimerDisplay(timer = timer) //시간 표시
+
+            WordDisplay( //문제 표시
                 modifier = Modifier
-                    .weight(2f)
+                    .weight(3f)
                     .fillMaxWidth(),
                 word = currentWord //처음엔 초성, 그 후로는 초성힌트로 업데이트
             )
 
-            Text(
-                text = "카테고리: $category",
-                modifier = Modifier.padding(8.dp)
-            )
+            CategoryDisplay( //카테고리 표시
+                modifier = Modifier
+                    .weight(0.5f)
+                    .fillMaxWidth(),
+                quizCategory = quizCategory)
 
             HintDisplay(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                quizHint = quizHint // 초성 힌트는 정답지에 표시할 것
+                easyQuizHint = easyQuizHint, // 초성 힌트는 정답지에 표시할 것
+                normalQuizHint = normalQuizHint
             )
 
             WordInput(
                 input = input,
                 onInputChange = { input = it }
             )
-        } // ← 중앙 Column 닫힘
+        } // 중앙 끝
 
         // 우측 - 채팅 목록
         ChatList(
@@ -147,7 +129,7 @@ fun GameScreen(
                 .fillMaxHeight()
                 .border(1.dp, Color.Gray)
         )
-    } // ← Row 닫힘
+    } // 우측 끝
 }
 
 // =====================
@@ -157,11 +139,11 @@ fun GameScreen(
 @Composable
 fun PlayerCard( //사용자 UI 설정
     name: String, //사용자명
-    score: Int = 0 //사용자 점수
+    score: Int = 0, //사용자 점수
 ) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxWidth() //너비 최대(할당된 비율을 꽉 채움)
             .height(60.dp) //크기:60
             .padding(4.dp), //사이간격: 4
         border = BorderStroke(1.dp, Color.Black), //테두리
@@ -174,6 +156,42 @@ fun PlayerCard( //사용자 UI 설정
     }
 }
 
+// =========================
+// 판수 표시
+// 최종 판수는 시간 종료 후 표시
+// =========================
+@Composable
+fun RoundDisplay(
+    countRound: Int
+) {
+    Text(
+        text = "${countRound}라운드",
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        textAlign = TextAlign.Center
+    )
+}
+
+// =====================
+// 타이머 표시
+// 로직 팀원에게 timer 받아옴
+// =====================
+@Composable
+fun TimerDisplay(
+    timer: Int = 30  // 더미, 로직 팀원이 전달
+) {
+    Text(
+        text = "${timer}초",
+        fontSize = 20.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        textAlign = TextAlign.Center
+    )
+}
+
 // =====================
 // 초성 표시
 // 맞춰야 할 단어의 초성
@@ -184,8 +202,10 @@ fun WordDisplay(
     word: String
 ) {
     Card(
-        modifier = modifier.padding(8.dp),
-        border = BorderStroke(1.dp, Color.Black)
+        modifier = modifier
+            .fillMaxWidth(),
+        border = BorderStroke(1.dp, Color.Black),
+        shape = RectangleShape
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -202,16 +222,42 @@ fun WordDisplay(
 }
 
 // =====================
+// 카테고리 표시
+// 관할 카테고리 가져오기
+// =====================
+@Composable
+fun CategoryDisplay(
+    quizCategory:String,
+    modifier: Modifier = Modifier
+){
+    Card(
+        modifier = modifier
+            .fillMaxWidth(),
+        border = BorderStroke(1.dp, Color.Black),
+        shape = RectangleShape
+    ){
+        Text(
+            text = "카테고리: $quizCategory",
+            modifier = Modifier.fillMaxWidth()
+                .padding(8.dp),
+            textAlign = TextAlign.Center
+        )
+    }
+}
+// =====================
 // 힌트 표시
 // 특성 힌트 1칸만 표시
 // =====================
 @Composable
 fun HintDisplay(
     modifier: Modifier = Modifier,
-    quizHint: String = "", // 기본값 빈 문자열
+    easyQuizHint: String = "", // 기본값 빈 문자열
+    normalQuizHint: String = ""
 ) {
     Card(
-        modifier = modifier.padding(4.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(30.dp),
         border = BorderStroke(1.dp, Color.Black),
         shape = RectangleShape
     ) {
@@ -220,7 +266,24 @@ fun HintDisplay(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = quizHint, // 받아온 힌트 표시
+                text = easyQuizHint, // 받아온 힌트 표시
+                modifier = Modifier.padding(8.dp)
+            )
+        }
+    }
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(30.dp),
+        border = BorderStroke(1.dp, Color.Black),
+        shape = RectangleShape
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = normalQuizHint, // 받아온 힌트 표시
                 modifier = Modifier.padding(8.dp)
             )
         }
