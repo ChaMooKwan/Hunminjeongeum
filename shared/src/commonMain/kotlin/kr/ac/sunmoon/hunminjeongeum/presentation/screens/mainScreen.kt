@@ -44,6 +44,7 @@ fun GameScreen(
         Triple("이리듐", 150, 1),
         Triple("나트륨", 300, 2)
     ), // 더미, 나중에 실제 데이터로 교체
+    myName:String = "이동욱", //더미, 사용자명
     quizCategory: String = "동물", //더미, 문제 카테고리
     wordCase: String = "ㄱㅇㅇ", // 더미, 문제 초성
     countRound: Int = 1, // 더미, 현재 판 수
@@ -156,6 +157,7 @@ fun GameScreen(
                 GameOver(
                     playerList = playerList,
                     totalRound = totalRound,
+                    myName = myName,
                     onConfirm = {dummyGameOver = false }
                 )
             }
@@ -382,8 +384,10 @@ fun GameOver(
     // 게임 로직에서 받아올 것
     playerList: List<Triple<String, Int, Int>>, // 이름, 맞힌 수
     totalRound: Int, // 총 문제 수
+    myName: String, // 사용자명
     onConfirm: () -> Unit // 확인 버튼 클릭
 ) {
+    val myResult = playerList.find {it.first == myName}
     Card(
         modifier = Modifier
             .fillMaxWidth(0.5f)
@@ -405,13 +409,17 @@ fun GameOver(
                 modifier = Modifier.padding(16.dp) //중앙으로 변경할 예정
             )
             // 플레이어별 결과 표시
-            playerList.forEach { (name, score, correct) ->
+            myResult?.let{ (name, score, correct) -> //myResult가 있을 시 실행
                 Text(
                     text = "$name : $correct / $totalRound\n 점수: $score", //이동욱: 3 / 10, 밑에는 점수:150 으로 표현
                     modifier = Modifier.padding(8.dp),
                     textAlign = TextAlign.Center
                 )
-            }
+            } ?: Text( //반환되는 값이 없을 때(없으면 오류인듯)
+                text = "결과를 찾을 수 없어요",
+                modifier = Modifier.padding(8.dp),
+                textAlign = TextAlign.Center
+            )
             // 확인 버튼
             Button(onClick = onConfirm) {
                 Text("확인")
