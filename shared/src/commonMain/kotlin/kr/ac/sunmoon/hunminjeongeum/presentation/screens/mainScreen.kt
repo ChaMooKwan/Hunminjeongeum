@@ -28,7 +28,23 @@ import androidx.compose.foundation.background // 오버레이 화면 띄우고, 
 //전체적인 색상변경 및 디자인 변경이 필요함
 @Composable
 fun mainScreen() {
-    GameScreen()
+    var myName by remember{mutableStateOf("")}
+    var portNumber by remember{mutableStateOf("")}
+    var ipAddress by remember{mutableStateOf("")}
+    var isProfileDone by remember {mutableStateOf(false)}
+    var isGameStart by remember {mutableStateOf(false)} //대기열에서 사용할 예정
+    if(isProfileDone){
+        GameScreen(myName = myName)
+    } else{
+        ProfileScreen(
+            onConfirm = {name, port, ip ->
+                myName = name
+                portNumber = port
+                ipAddress = ip
+                isProfileDone = true
+            }
+        )
+    }
 }
 
 // =====================
@@ -46,26 +62,35 @@ fun GameScreen(
     ), // 더미, 나중에 실제 데이터로 교체
     myName:String = "이동욱", //더미, 사용자명
     quizCategory: String = "동물", //더미, 문제 카테고리
-    wordCase: String = "ㄱㅇㅇ", // 더미, 문제 초성
+    wordQuiz: String = "ㄱㅁㅎㄱ", // 더미, 문제 초성
     countRound: Int = 1, // 더미, 현재 판 수
     totalRound: Int = 5, // 더미, 총 판 수
     timer: Int = 30, // 더미, 실제 서버 시간에서 받아올 것
-    chat: String = "", // 게임 로직에서 하나씩 전달
+    userChat: String = "", // 게임 로직에서 하나씩 전달
     isGameOver: Boolean = false, // 게임 종료 시 true
 
     // AI 프롬프트 담당자에게 받는 데이터
-    wordHint: String = "ㄱ양ㅇ",  //더미, 초성 힌트가 들어올 시 문제 업데이트용
-    easyQuizHint: String = "줄무늬가 있고, 주로 나비라고 불립니다", //더미, 쉬움 특성 힌트가 들어올 시 삽입됨
-    normalQuizHint: String = "육식동물이며 사회안에 녹아들어있습니다" //더미, 중간 특성 힌트가 들어올 시 삽입함
+    easyWordHint: String = "ㄱ미ㅎㄱ",  //더미, 쉬움 초성 힌트(단어가 3개 이하)가 들어올 시 문제 업데이트용
+    normalWordHint: String = "개미ㅎㄱ",  //더미, 초성 힌트(단어가 4개 이상)가 들어올 시 문제 업데이트용
+    easyHint: String = "줄무늬가 있고, 주로 나비라고 불립니다", //더미, 쉬움 특성 힌트(단어가 2개)가 들어올 시 삽입됨
+    normalHint: String = "육식동물이며 초원지대에 살고 있습니다", //더미, 중간 특성 힌트(단어가 3개)가 들어올 시 삽입함
+    hardHint: String = "주식으로 개미를 먹습니다" //더미, 어려움 특성 힌트(단어가 4개 이상)가 들어올 시 삽입함
 ) {
     var input by remember { mutableStateOf("") }
     val chatList = remember { mutableStateListOf("안녕", "이거 강아지 아님?") } // 더미
     val sortedPlayerList = playerList.sortedByDescending { it.second } //내림차순 정렬로 큰 수가 위로 가게 정렬
-    val currentWord = if (wordHint.isEmpty()) wordCase else wordHint //힌트가 들어온다면 wordHint, 아니면 처음 초성인 wordCase표시
     // ============================================================
     // //GameOver로직이 잘 작동되는지 확인하기 위한 더미 기믹 - 구현 시 삭제
     var dummyGameOver by remember{mutableStateOf(false)}
     var timeLeft by remember { mutableStateOf(30) }
+    // ============================================================
+    val wordCount = wordQuiz.length //단어 개수확인용
+    val hintState = quizSelector(wordCount, timeLeft) //값 집어넣기
+    val currentWord = when{ //단어 덮어씌우기
+        hintState["normalWordHint"] == true -> normalWordHint
+        hintState["easyWordHint"] == true -> easyWordHint
+        else -> wordQuiz
+    }
 
     LaunchedEffect(Unit) {
         while (timeLeft > 0) {
@@ -77,9 +102,9 @@ fun GameScreen(
     // ============================================================
 
     //채팅 입력 시(값이 바뀜 = 입력) 실행
-    LaunchedEffect(chat) {
-        if (chat.isNotEmpty()) { //빈 채팅 여부
-            chatList.add(chat)
+    LaunchedEffect(userChat) {
+        if (userChat.isNotEmpty()) { //빈 채팅 여부
+            chatList.add(userChat)
         }
     }
 
@@ -126,10 +151,11 @@ fun GameScreen(
 
                 HintDisplay(
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(1.5f)
                         .fillMaxWidth(),
-                    easyQuizHint = easyQuizHint, // 초성 힌트는 정답지에 표시할 것
-                    normalQuizHint = normalQuizHint
+                    easyHint   = if (hintState["easyHint"]   == true) easyHint   else "",
+                    normalHint = if (hintState["normalHint"] == true) normalHint else "",
+                    hardHint   = if (hintState["hardHint"]   == true) hardHint   else ""
                 )
 
                 WordInput(
@@ -285,8 +311,9 @@ fun CategoryDisplay(
 @Composable
 fun HintDisplay(
     modifier: Modifier = Modifier,
-    easyQuizHint: String = "", // 기본값 빈 문자열
-    normalQuizHint: String = ""
+    easyHint: String = "", // 기본값 빈 문자열
+    normalHint: String = "",
+    hardHint: String = ""
 ) {
     Column(modifier = modifier){
         Card(
@@ -301,7 +328,7 @@ fun HintDisplay(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = easyQuizHint, // 받아온 힌트 표시
+                    text = easyHint, // 받아온 힌트 표시
                     modifier = Modifier.padding(8.dp)
                 )
             }
@@ -318,7 +345,24 @@ fun HintDisplay(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = normalQuizHint, // 받아온 힌트 표시
+                    text = normalHint, // 받아온 힌트 표시
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+        }
+        Card(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            border = BorderStroke(1.dp, Color.Black),
+            shape = RectangleShape
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = hardHint, // 받아온 힌트 표시
                     modifier = Modifier.padding(8.dp)
                 )
             }
@@ -425,5 +469,49 @@ fun GameOver(
                 Text("확인")
             }
         }
+    }
+}
+// =====================
+// 힌트 조건 선택
+// 음절 수와 시간에 따라 힌트 공개 여부 결정
+// =====================
+//compose를 안사용하기때문에 Composable제거
+fun quizSelector(
+    wordCount: Int, //wordQuiz.length
+    timer: Int
+): Map<String, Boolean> {
+    return when {
+        // 1음절
+        wordCount == 1 ->  mapOf(
+            "easyHint"      to false,
+            "easyWordHint"  to false,
+            "normalHint"    to (timer <= 15), //특성힌트2
+            "normalWordHint" to false,
+            "hardHint"      to false
+        )
+        // 2음절
+        wordCount == 2 -> mapOf(
+            "easyHint"      to (timer <= 25),  // 특성힌트1
+            "easyWordHint"  to (timer <= 15),  // 초성힌트1
+            "normalHint"    to false,
+            "normalWordHint" to false,
+            "hardHint"      to false
+        )
+        // 3음절
+        wordCount == 3 -> mapOf(
+            "easyHint"      to (timer <= 25),  // 특성힌트1
+            "normalHint"    to (timer <= 20),  // 특성힌트2
+            "easyWordHint"  to (timer <= 15),  // 초성힌트1
+            "normalWordHint" to false,
+            "hardHint"      to false
+        )
+        // 4-5음절
+        else -> mapOf(
+            "easyHint"      to (timer <= 25),  // 특성힌트1
+            "easyWordHint"  to (timer <= 20),  // 초성힌트1
+            "normalHint"    to (timer <= 15),  // 특성힌트2
+            "normalWordHint" to (timer <= 10), // 초성힌트2
+            "hardHint"      to (timer <= 5)    // 특성힌트3
+        )
     }
 }
