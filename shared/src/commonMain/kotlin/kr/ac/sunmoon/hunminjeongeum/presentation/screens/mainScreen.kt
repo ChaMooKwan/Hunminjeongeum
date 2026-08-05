@@ -50,24 +50,28 @@ fun GameScreen(
 ) {
     var input by remember { mutableStateOf("") }
     val chatList = remember { mutableStateListOf("안녕", "이거 강아지 아님?") } // 더미
-    val sortedPlayerList = playerList.sortedByDescending{it.second} //내림차순 정렬로 큰 수가 위로 가게 정렬
-    val currentWord = if(wordHint.isEmpty()) wordCase else wordHint //힌트가 들어온다면 wordHint, 아니면 처음 초성인 wordCase표시
-    var timer by remember {mutableStateOf(30)} //제한시간 30초 설정
+    val sortedPlayerList = playerList.sortedByDescending { it.second } //내림차순 정렬로 큰 수가 위로 가게 정렬
+    val currentWord = if (wordHint.isEmpty()) wordCase else wordHint //힌트가 들어온다면 wordHint, 아니면 처음 초성인 wordCase표시
+    var timer by remember { mutableStateOf(30) } //제한시간 30초 설정
+
     //채팅 입력 시(값이 바뀜 = 입력) 실행
     LaunchedEffect(chat) {
         if (chat.isNotEmpty()) { //빈 채팅 여부
             chatList.add(chat)
         }
     }
+
     //타이머가 0초일 시 종료
-    LaunchedEffect(Unit){
-        while(timer > 0){
+    LaunchedEffect(Unit) {
+        while (timer > 0) {
             delay(1000L) //1초마다(Long타입)
-            timer -- //타이머 1초 가소
+            timer-- //타이머 1초 감소
         }
     }
 
-    Row(modifier = Modifier.fillMaxSize()) { // 좌측 플레이어 목록
+    Row(modifier = Modifier.fillMaxSize()) {
+
+        // 좌측 - 플레이어 목록
         Column(
             modifier = Modifier
                 .weight(0.2f) //20% 차지
@@ -77,9 +81,9 @@ fun GameScreen(
             sortedPlayerList.forEach { (name, score) ->
                 PlayerCard(name = name, score = score) //카드에 삽입 및 추가
             }
-        }
-//시간 추가해야함
-        // 중앙 - 게임 영역 마지막에 터짐(수정 필요)
+        } // ← 좌측 Column 닫힘
+
+        // 중앙 - 게임 영역
         Column(
             modifier = Modifier
                 .weight(0.6f)
@@ -87,10 +91,10 @@ fun GameScreen(
                 .border(1.dp, Color.Black)
         ) {
             //상단 시간 표시
-            /*Row(
+            Row(
                 modifier = Modifier.fillMaxWidth().padding(8.dp),
                 horizontalArrangement = Arrangement.Center
-            ){
+            ) {
                 Text(
                     text = "$countRound / $totalRound",
                     modifier = Modifier.weight(1f)
@@ -101,20 +105,14 @@ fun GameScreen(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center    // ← 텍스트 중앙
+                    textAlign = TextAlign.Center
                 )
                 // 우측 빈칸 (좌우 균형)
                 Text(
                     text = "",
                     modifier = Modifier.weight(1f)
                 )
-            }
-            }
-            //현재 판 수 표시
-            Text(
-                text = "$countRound / $totalRound",
-                modifier = Modifier.padding(8.dp)
-            )
+            } // ← Row 닫힘
 
             WordDisplay(
                 modifier = Modifier
@@ -122,21 +120,24 @@ fun GameScreen(
                     .fillMaxWidth(),
                 word = currentWord //처음엔 초성, 그 후로는 초성힌트로 업데이트
             )
+
             Text(
                 text = "카테고리: $category",
                 modifier = Modifier.padding(8.dp)
             )
+
             HintDisplay(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
                 quizHint = quizHint // 초성 힌트는 정답지에 표시할 것
             )
+
             WordInput(
                 input = input,
                 onInputChange = { input = it }
-            )*/
-        }
+            )
+        } // ← 중앙 Column 닫힘
 
         // 우측 - 채팅 목록
         ChatList(
@@ -146,7 +147,7 @@ fun GameScreen(
                 .fillMaxHeight()
                 .border(1.dp, Color.Gray)
         )
-    }
+    } // ← Row 닫힘
 }
 
 // =====================
@@ -193,7 +194,7 @@ fun WordDisplay(
             Text(
                 text = word,
                 fontSize = 100.sp, //크기 설정
-                fontWeight = FontWeight.Bold, //굴기 설정
+                fontWeight = FontWeight.Bold, //굵기 설정
                 //텍스트 패딩은 중앙 정렬이라 필요 없어서 제거
             )
         }
@@ -202,28 +203,26 @@ fun WordDisplay(
 
 // =====================
 // 힌트 표시
-// 로직에서 시간에 따라 순차적으로 전달
-// 50초 → easyHint
-// 25초 → normalHint
-// 10초 → hardHint
+// 특성 힌트 1칸만 표시
 // =====================
 @Composable
 fun HintDisplay(
     modifier: Modifier = Modifier,
-    quizHint: String = "",              // 기본값 빈 문자열
+    quizHint: String = "", // 기본값 빈 문자열
 ) {
-    Column(modifier = modifier) {
-        Card(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(4.dp),
-            border = BorderStroke(1.dp, Color.Black),
-            shape = RectangleShape
+    Card(
+        modifier = modifier.padding(4.dp),
+        border = BorderStroke(1.dp, Color.Black),
+        shape = RectangleShape
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
             Text(
-                text = quizHint,        // 받아온 힌트 표시
-                modifier = Modifier.padding(8.dp))
+                text = quizHint, // 받아온 힌트 표시
+                modifier = Modifier.padding(8.dp)
+            )
         }
     }
 }
