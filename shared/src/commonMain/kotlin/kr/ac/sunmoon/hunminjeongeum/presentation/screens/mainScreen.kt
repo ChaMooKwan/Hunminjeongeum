@@ -58,8 +58,8 @@ fun mainScreen() {
             playerList = playerList,
             connection = connection
         )
-    } else if (isProfileDone) { //프로필 작성만 true라면?
-        PrepareScreen( // 대기화면으로 이동
+    } else if (isProfileDone) { //프로필 작성만 true일 시
+        PrepareScreen( // 게임 시작 버튼 클릭 시 대기화면으로 이동
             myName = myName,
             connection = connection,
             playerList = playerList,
@@ -73,7 +73,7 @@ fun mainScreen() {
                 myName = name
                 portNumber = port
                 ipAddress = ip
-                val portInt = portNumber.toIntOrNull()
+                val portInt = port.toIntOrNull()
                 if (portInt == null) isPortError = true
                 else {
                     isPortError = false
@@ -135,11 +135,12 @@ fun GameScreen(
     val wordCount = wordQuiz.length //단어 개수확인용
     val hintState = quizSelector(wordCount, timeLeft) //값 집어넣기
     val currentWord = when{ //단어 덮어씌우기
-        hintState["normalWordHint"] == true -> normalWordHint
+        hintState["normalWordHint"] == true -> normalWordHint //힌트 조건이 성립 시
         hintState["easyWordHint"] == true -> easyWordHint
         else -> wordQuiz
     }
-
+    // ============================================================
+    //더미 시간 데이터
     LaunchedEffect(Unit) {
         while (timeLeft > 0) {
             delay(1000L)
@@ -202,7 +203,7 @@ fun GameScreen(
                     quizCategory = quizCategory
                 )
 
-                HintDisplay(
+                HintDisplay( //힌트 표시
                     modifier = Modifier
                         .weight(1.5f)
                         .fillMaxWidth(),
@@ -211,7 +212,7 @@ fun GameScreen(
                     hardHint   = if (hintState["hardHint"]   == true) hardHint   else ""
                 )
 
-                WordInput(
+                WordInput( //입력창 표시
                     input = input,
                     onInputChange = { input = it }
                 )
@@ -322,7 +323,7 @@ fun WordDisplay(
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center // ← 중앙 정렬
+            contentAlignment = Alignment.Center //중앙 정렬
         ) {
             Text(
                 text = word,
@@ -334,10 +335,10 @@ fun WordDisplay(
     }
 }
 
-// =====================
+// ========================
 // 카테고리 표시
-// 관할 카테고리 가져오기
-// =====================
+// 문제 단어의 카테고리 가져오기
+// ========================
 @Composable
 fun CategoryDisplay(
     quizCategory:String,
@@ -368,7 +369,7 @@ fun HintDisplay(
     normalHint: String = "",
     hardHint: String = ""
 ) {
-    Column(modifier = modifier){
+    Column(modifier = modifier){ //힌트칸 3개
         Card(
             modifier = Modifier
                 .weight(1f)
@@ -423,10 +424,10 @@ fun HintDisplay(
     }
 }
 
-// =====================
+// ========================
 // 정답 입력창
-// 사용자가 정답 입력하는 곳
-// =====================
+// 사용자가 문자를 입력하는 곳
+// ========================
 @Composable
 fun WordInput(
     input: String,
@@ -446,26 +447,29 @@ fun WordInput(
     )
 }
 
-// =====================
+// =======================
 // 채팅/오답 목록
 // 우측에 표시되는 오답 리스트
-// =====================
+// =======================
 @Composable
 fun ChatList(
-    chatMessages: List<ChatMessage>,  // ← String → ChatMessage
-    myName: String,                   // ← 추가
+    chatMessages: List<ChatMessage>,
+    myName: String,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(modifier = modifier) {
-        items(chatMessages.reversed()) { chatMessage ->
+    LazyColumn(
+        modifier = modifier,
+        reverseLayout = true //최신 정보가 아래로 향하게
+    ) {
+        items(chatMessages) { chatMessage -> //채팅메시지를 아래에 표시
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(4.dp),
                 horizontalArrangement = if (chatMessage.userName == myName)
-                    Arrangement.End
+                    Arrangement.End //오른쪽에 채팅 배치(나)
                 else
-                    Arrangement.Start
+                    Arrangement.Start //왼쪽에 채팅 배치
             ) {
                 Card(
                     border = BorderStroke(1.dp, Color.Gray)

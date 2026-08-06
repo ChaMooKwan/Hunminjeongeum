@@ -85,9 +85,10 @@ fun PrepareScreen(
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
+                reverseLayout = true
             ) {
-                items(chatMessages.reversed()) { chatMessage ->
+                items(chatMessages) { chatMessage ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

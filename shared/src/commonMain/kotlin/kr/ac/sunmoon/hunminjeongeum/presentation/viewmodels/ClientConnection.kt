@@ -60,10 +60,12 @@ class ClientConnection(
      */
     fun startReceiver() {
         thread(isDaemon = true) {
-            // !! 서버는 ChatMessage 클래스에서 속성인 userName과 message를 ,를 구분자로 하여 전송한다.
-            val encodedMessage: List<String> = reader.readLine().split(",")
-            val chatMessage = ChatMessage(encodedMessage.first(), encodedMessage.last())
-            viewModel.updateChatHistory(chatMessage)
+            while (true) { //서버 게속 대기 시키기 위함
+                // !! 서버는 ChatMessage 클래스에서 속성인 userName과 message를 ,를 구분자로 하여 전송한다.
+                val encodedMessage: List<String> = reader.readLine().split(",")
+                val chatMessage = ChatMessage(encodedMessage.first(), encodedMessage.last())
+                viewModel.updateChatHistory(chatMessage)
+            }
         }
     }
 }
