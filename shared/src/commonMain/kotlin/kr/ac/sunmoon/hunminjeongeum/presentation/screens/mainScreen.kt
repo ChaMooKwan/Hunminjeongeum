@@ -1,5 +1,7 @@
 package kr.ac.sunmoon
 
+import kr.ac.sunmoon.ClientConnection
+import kr.ac.sunmoon.ChatViewModel
 import androidx.compose.foundation.BorderStroke //BorderStroke(1.dp(굵기), Color.gray(색감))를 이용하여 Card 테두리 표시
 import androidx.compose.foundation.border //Column, Row등의 테두리 표시
 import androidx.compose.foundation.layout.* // fillMaxSize, padding, weight 등 레이아웃 관련 설정
@@ -22,26 +24,75 @@ import androidx.compose.ui.unit.sp //사용자 폰트 크기 설정에 반영
 import kotlinx.coroutines.delay //시간 확인 -> 서버 처리 할거라 쓸모 없음
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.background // 오버레이 화면 띄우고, alpha를 사요해 게임 화면 창 원하는 정도로 흐릿하게 하기
+import kotlin.String
+import kotlin.Triple
 
-//해야할 일: 1. 시간이 종료 될 시 종료 문구와 totalRound와 사용자가 맞춘 점수 대비해서 n/totalRound로 표기
-//n을 정의할 수 -> 맞은 횟수 변수 필요(n) -> 변수명 correct로 할 것
 //전체적인 색상변경 및 디자인 변경이 필요함
 @Composable
 fun mainScreen() {
-    var myName by remember{mutableStateOf("")}
-    var portNumber by remember{mutableStateOf("")}
-    var ipAddress by remember{mutableStateOf("")}
-    var isProfileDone by remember {mutableStateOf(false)}
-    var isGameStart by remember {mutableStateOf(false)} //대기열에서 사용할 예정
-    if(isProfileDone){
-        GameScreen(myName = myName)
-    } else{
-        ProfileScreen(
-            onConfirm = {name, port, ip ->
+    var playerList by remember {
+        mutableStateOf<List<Triple<String, Int, Int>>>(
+            listOf( //더미 리스트 추가 원래였으면 emptyList로 해야함 -> 서버 연동 시 삭제
+                Triple("홍길동", 0, 0),
+                Triple("김철수", 0, 0),
+                Triple("이영희", 0, 0),
+                Triple("박민준", 0, 0),
+                Triple("최지우", 0, 0),
+                Triple("강다은", 0, 0),
+                Triple("이준호", 0, 0)
+            )
+        )
+    } //사용자 리스트 받아오기(ip, 포트번호, 사용자명)
+    var myName by remember { mutableStateOf("") } //사용자명
+    var portNumber by remember { mutableStateOf("") } //포트 번호
+    var ipAddress by remember { mutableStateOf("") } //IP 주소
+    var isProfileDone by remember { mutableStateOf(false) } //프로필창 전부 채웠는지 여부
+    var isGameStart by remember { mutableStateOf(false) } //게임 시작 버튼 클릭 여부(서버에 전달이 갔는가)
+    var connection by remember { mutableStateOf<ClientConnection?>(null) } //클라이언트와 서버간에 name, ip, port 상호작용
+    var isPortError by remember { mutableStateOf(false) } // 받아온 port를 Int형으로 치환 시 오류 발생 여부
+    var isConnectError by remember { mutableStateOf(false) } // 서버 접속 실패 여부
+
+    if (isGameStart) { //프로필 작성 완료 및 버튼 클릭 시 서버에 갔다가 myName 받아오기
+        GameScreen(
+            myName = myName,
+            playerList = playerList,
+            connection = connection
+        )
+    } else if (isProfileDone) { //프로필 작성만 true라면?
+        PrepareScreen( // 대기화면으로 이동
+            myName = myName,
+            connection = connection,
+            playerList = playerList,
+            onGameStart = { isGameStart = true }
+        )
+    } else {
+        ProfileScreen( //작성 완료까지 기다리다가 완료되면 받아오기
+            isPortError = isPortError, //포트 오류 확인
+            isConnectError = isConnectError, // 서버 접속 실패 확인 ← 추가
+            onConfirm = { name, port, ip ->
                 myName = name
                 portNumber = port
                 ipAddress = ip
-                isProfileDone = true
+                val portInt = portNumber.toIntOrNull()
+                if (portInt == null) isPortError = true
+                else {
+                    isPortError = false
+                    try {
+                        connection = ClientConnection(
+                            ip = ip,
+                            port = portInt,
+                            userName = name
+                        )
+                        connection?.connect()
+                        isProfileDone = true  // ← 성공 시에만 이동
+                    } catch (e: Exception) {
+                        /// 기존 코드 (서버 있을 때)
+                        // isConnectError = true
+                        // isProfileDone = false
+                        // 테스트용 더미 -> 서버 열리면 삭제
+                        isProfileDone = true  // 서버 없어도 다음 화면으로
+                    }
+                }
             }
         )
     }
@@ -55,12 +106,9 @@ fun mainScreen() {
 fun GameScreen(
     // 게임 로직 담당자에게 받는 데이터
     //더미데이터는 실제 실행 시 지울 것
-    playerList: List<Triple<String, Int, Int>> = listOf(
-        Triple("이동욱", 0, 0),
-        Triple("이리듐", 150, 1),
-        Triple("나트륨", 300, 2)
-    ), // 더미, 나중에 실제 데이터로 교체
+    playerList: List<Triple<String, Int, Int>> = emptyList(), // 플레이어 리스트 가져오기
     myName:String = "이동욱", //더미, 사용자명
+    connection: ClientConnection ?= null, //서버 불러오기
     quizCategory: String = "동물", //더미, 문제 카테고리
     wordQuiz: String = "ㄱㅁㅎㄱ", // 더미, 문제 초성
     countRound: Int = 1, // 더미, 현재 판 수
@@ -107,6 +155,11 @@ fun GameScreen(
             chatList.add(userChat)
         }
     }
+
+    //서버에서 채팅 메시지 가져오기
+    val chatMessages by connection?.viewModel?.messages
+        ?.collectAsState(emptyList())
+        ?: remember { mutableStateOf(emptyList()) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Row(modifier = Modifier.fillMaxSize()) {
@@ -163,10 +216,10 @@ fun GameScreen(
                     onInputChange = { input = it }
                 )
             } // 중앙 끝
-
             // 우측 - 채팅 목록
             ChatList(
-                chatList = chatList,
+                chatMessages = chatMessages,
+                myName = myName,
                 modifier = Modifier
                     .weight(0.2f)
                     .fillMaxHeight()
@@ -399,21 +452,29 @@ fun WordInput(
 // =====================
 @Composable
 fun ChatList(
-    chatList: List<String>,
+    chatMessages: List<ChatMessage>,  // ← String → ChatMessage
+    myName: String,                   // ← 추가
     modifier: Modifier = Modifier
 ) {
     LazyColumn(modifier = modifier) {
-        items(chatList) { chat ->
-            Card(
+        items(chatMessages.reversed()) { chatMessage ->
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(4.dp),
-                border = BorderStroke(1.dp, Color.Gray)
+                horizontalArrangement = if (chatMessage.userName == myName)
+                    Arrangement.End
+                else
+                    Arrangement.Start
             ) {
-                Text(
-                    text = chat,
-                    modifier = Modifier.padding(8.dp)
-                )
+                Card(
+                    border = BorderStroke(1.dp, Color.Gray)
+                ) {
+                    Text(
+                        text = "${chatMessage.userName}: ${chatMessage.message}",
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
             }
         }
     }

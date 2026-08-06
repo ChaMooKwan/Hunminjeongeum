@@ -1,4 +1,4 @@
-package kr.ac.sunmoon.hunminjeongeum.presentation.viewmodels
+package kr.ac.sunmoon
 
 import java.io.PrintWriter
 import java.net.Socket
@@ -14,11 +14,11 @@ class ClientConnection(
     val ip: String,
     val port: Int,
     val userName: String,
-) {
+) { //   val cl = ClientConnetion(ip,port,userName).connect()
     private lateinit var socket: Socket
     private lateinit var reader: BufferedReader
     private lateinit var writer: PrintWriter
-    private val viewModel = ChatViewModel()
+    val viewModel = ChatViewModel() //채팅 메시지를 직접 가져올 수 있게(CientConnection으로 부르지 않더라도 가능하게)
 
     // [1번 화면]의 닉네임, 아이피, 포트 입력하고 확인 눌렀을 때 호출한다.
     fun connect() {
