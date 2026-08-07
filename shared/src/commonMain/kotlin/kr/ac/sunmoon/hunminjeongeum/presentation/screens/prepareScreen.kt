@@ -26,33 +26,10 @@ fun PrepareScreen(
     sharedChatList: MutableList<ChatMessage> = mutableStateListOf(), //채팅창 main에 공유 - 서버 연동 시 사용
     onGameStart: () -> Unit //게임 시작 신호
 ) {
-    // =======================================================================================
-    // 더미 데이터 - 서버 연동 시 삭제
-    val dummyMyName = if (myName.isEmpty()) "나" else myName // myName 비어있으면 "나"로 대체
-
-    val chatList = remember { // 채팅 리스트 - 서버 연동 시 sharedChatList로 교체
-        mutableStateListOf(
-            ChatMessage("홍길동", "안녕하세요!"),
-            ChatMessage("김철수", "빨리 시작해요~"),
-            ChatMessage(dummyMyName, "저도 왔어요!"),
-            ChatMessage("홍길동", "반가워요!"),
-            ChatMessage("김철수", "빨리해요~"),
-            ChatMessage(dummyMyName, "저도 왔어요!"),
-            ChatMessage("홍길동", "안녕하세요!"),
-            ChatMessage("김철수", "빨리 시작해요~"),
-            ChatMessage(dummyMyName, "저도 왔어요!"),
-            ChatMessage("홍길동", "반가워요!"),
-            ChatMessage("김철수", "빨리해요~"),
-            ChatMessage(dummyMyName, "저도 왔어요!"),
-            ChatMessage("홍길동", "안녕하세요!"),
-            ChatMessage("김철수", "빨리 시작해요~"),
-            ChatMessage(dummyMyName, "저도 왔어요!"),
-            ChatMessage("홍길동", "반가워요!"),
-            ChatMessage("김철수", "빨리해요~"),
-            ChatMessage(dummyMyName, "저도 왔어요!"),
-        )
-    }
-    // =======================================================================================
+    //채팅 메시지 서버와 연결
+    val chatMessages by connection?.chatViewModel?.messages
+        ?.collectAsState(emptyList())
+        ?: remember { mutableStateOf(emptyList()) }
 
     var input by remember { mutableStateOf("") } //메시지 입력값
     val listState = rememberLazyListState() //스크롤 상태 관리
@@ -68,9 +45,9 @@ fun PrepareScreen(
     }
 
     // 새 메시지 올 때마다 맨 아래로 스크롤
-    LaunchedEffect(chatList.size) {
-        if (chatList.isNotEmpty()) { //비어있지 않을 때만 실행
-            listState.animateScrollToItem(chatList.size - 1)
+    LaunchedEffect(chatMessages.size) {
+        if (chatMessages.isNotEmpty()) { //비어있지 않을 때만 실행
+            listState.animateScrollToItem(chatMessages.size - 1)
         }
     }
 
@@ -130,7 +107,7 @@ fun PrepareScreen(
                     .fillMaxWidth(),
                 state = listState //스크롤 상태
             ) {
-                items(chatList) { chatMessage -> //서버 연동 시 sharedChatList로 교체
+                items(chatMessages) { chatMessage ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -142,14 +119,14 @@ fun PrepareScreen(
                     ) {
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = if (chatMessage.userName == dummyMyName) //서버 연동 시 myName으로 교체
+                                containerColor = if (chatMessage.userName == myName) //서버 연동 시 myName으로 교체
                                     LightPurple  // 내 메시지 연보라
                                 else
                                     White        // 상대 메시지 흰색
                             ),
                             border = BorderStroke(
                                 1.dp,
-                                if (chatMessage.userName == dummyMyName) Purple else Gray //서버 연동 시 myName으로 교체
+                                if (chatMessage.userName == myName) Purple else Gray //서버 연동 시 myName으로 교체
                             )
                         ) {
                             Text(
@@ -174,14 +151,9 @@ fun PrepareScreen(
                     if (it.endsWith("\n")) { // 엔터 감지
                         val message = it.trimEnd() // 앞뒤 공백 제거
                         if (message.isNotEmpty()) { // 빈 메시지 방지
-                            if (connection == null) {
-                                // 더미 - 서버 없을 때 로컬에 추가
-                                chatList.add(ChatMessage(dummyMyName, message))
-                            } else {
-                                try {
-                                    connection.send(message) // 서버로 메시지 전송
-                                } catch (e: Exception) { }
-                            }
+                            try {
+                                connection?.sendChat(message)  // 서버로 전송
+                            } catch (e: Exception) { }
                             input = "" // 입력창 초기화
                         }
                     } else {

@@ -27,6 +27,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.material3.Typography
+import kotlinx.coroutines.delay
 import kotlin.String
 import kotlin.Triple
 
@@ -35,7 +36,7 @@ import kotlin.Triple
 fun mainScreen() {
     val jua = juaFamily() //폰트
     //사용자 리스트 받아오기(ip, 포트번호, 사용자명)
-    var myName by remember { mutableStateOf("나") } //사용자명 -> 더미데이터 "나" 서버 연동 시 제거
+    var myName by remember { mutableStateOf("") } //사용자명 -> 더미데이터 "나" 서버 연동 시 제거
     var portNumber by remember { mutableStateOf("") } //포트 번호
     var ipAddress by remember { mutableStateOf("") } //IP 주소
     var isProfileDone by remember { mutableStateOf(false) } //프로필창 전부 채웠는지 여부
@@ -44,6 +45,7 @@ fun mainScreen() {
     var isPortError by remember { mutableStateOf(false) } // 받아온 port를 Int형으로 치환 시 오류 발생 여부
     var isConnectError by remember { mutableStateOf(false) } // 서버 접속 실패 여부
     val sharedChatList = remember { mutableStateListOf<ChatMessage>()} //공유 채팅 리슽 추가
+    var playerList by remember { mutableStateOf<List<Triple<String, Int, Int>>>(listOf()) } //사용자 리스트
     MaterialTheme(
         typography = Typography(  // ← 추가
             bodyLarge = TextStyle(fontFamily = jua),
@@ -57,27 +59,15 @@ fun mainScreen() {
             labelSmall = TextStyle(fontFamily = jua),
         )
     ) {
-        var playerList by remember {
-            mutableStateOf<List<Triple<String, Int, Int>>>(
-                listOf( //더미 리스트 추가 원래였으면 emptyList로 해야함 -> 서버 연동 시 삭제
-                    Triple("홍길동", 0, 0),
-                    Triple("김철수", 0, 0),
-                    Triple("이영희", 0, 0),
-                    Triple("박민준", 0, 0),
-                    Triple("최지우", 0, 0),
-                    Triple("이준호", 0, 0)
-                )
-            )
-        }
-        LaunchedEffect(Unit) {
-            if (sharedChatList.isEmpty()) {
-                sharedChatList.addAll(
-                    listOf(
-                        ChatMessage("홍길동", "안녕하세요!"),
-                        ChatMessage("김철수", "빨리 시작해요~"),
-                        ChatMessage(myName, "저도 왔어요!")
-                    )
-                )
+        //isGameStart 서버 감지
+        //connection.isGameStart가 true되면 화면 전환
+        LaunchedEffect(connection) {
+            while (true) {
+                if (connection?.isGameStart == true) {
+                    isGameStart = true
+                    break
+                }
+                delay(100L)
             }
         }
         if (isGameStart) { //프로필 작성 완료 및 버튼 클릭 시 서버에 갔다가 myName 받아오기
@@ -117,10 +107,8 @@ fun mainScreen() {
                             isProfileDone = true  // ← 성공 시에만 이동
                         } catch (e: Exception) {
                             /// 기존 코드 (서버 있을 때)
-                            // isConnectError = true
-                            // isProfileDone = false
-                            // 테스트용 더미 -> 서버 열리면 삭제
-                            isProfileDone = true  // 서버 없어도 다음 화면으로
+                             isConnectError = true
+                             isProfileDone = false
                         }
                     }
                 }
@@ -502,7 +490,7 @@ fun ChatList(
 ) {
     LazyColumn(
         modifier = modifier,
-        reverseLayout = true //최신 정보가 아래로 향하게
+        reverseLayout = false //최신 정보가 아래로 향하게
     ) {
         items(chatMessages) { chatMessage -> //채팅메시지를 아래에 표시
             Row(
@@ -515,8 +503,14 @@ fun ChatList(
                     Arrangement.Start //왼쪽에 채팅 배치
             ) {
                 Card(
-                    border = BorderStroke(1.dp, Color.Gray)
-                ) {
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (chatMessage.userName == myName) LightPurple else White
+                    ),
+                    border = BorderStroke(
+                        1.dp,
+                        if (chatMessage.userName == myName) Purple else Gray
+                    )
+                ){ //텍스트 표시
                     Text(
                         text = "${chatMessage.userName}: ${chatMessage.message}",
                         modifier = Modifier.padding(8.dp)
