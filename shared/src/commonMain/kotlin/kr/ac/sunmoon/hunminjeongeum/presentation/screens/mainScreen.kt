@@ -1,7 +1,5 @@
 package kr.ac.sunmoon
 
-import kr.ac.sunmoon.ClientConnection
-import kr.ac.sunmoon.ChatViewModel
 import androidx.compose.foundation.BorderStroke //BorderStroke(1.dp(굵기), Color.gray(색감))를 이용하여 Card 테두리 표시
 import androidx.compose.foundation.border //Column, Row등의 테두리 표시
 import androidx.compose.foundation.layout.* // fillMaxSize, padding, weight 등 레이아웃 관련 설정
@@ -24,26 +22,20 @@ import androidx.compose.ui.unit.sp //사용자 폰트 크기 설정에 반영
 import kotlinx.coroutines.delay //시간 확인 -> 서버 처리 할거라 쓸모 없음
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.background // 오버레이 화면 띄우고, alpha를 사요해 게임 화면 창 원하는 정도로 흐릿하게 하기
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.material3.Typography
 import kotlin.String
 import kotlin.Triple
 
 //전체적인 색상변경 및 디자인 변경이 필요함
 @Composable
 fun mainScreen() {
-    var playerList by remember {
-        mutableStateOf<List<Triple<String, Int, Int>>>(
-            listOf( //더미 리스트 추가 원래였으면 emptyList로 해야함 -> 서버 연동 시 삭제
-                Triple("홍길동", 0, 0),
-                Triple("김철수", 0, 0),
-                Triple("이영희", 0, 0),
-                Triple("박민준", 0, 0),
-                Triple("최지우", 0, 0),
-                Triple("강다은", 0, 0),
-                Triple("이준호", 0, 0)
-            )
-        )
-    } //사용자 리스트 받아오기(ip, 포트번호, 사용자명)
-    var myName by remember { mutableStateOf("") } //사용자명
+    val jua = juaFamily() //폰트
+    //사용자 리스트 받아오기(ip, 포트번호, 사용자명)
+    var myName by remember { mutableStateOf("나") } //사용자명 -> 더미데이터 "나" 서버 연동 시 제거
     var portNumber by remember { mutableStateOf("") } //포트 번호
     var ipAddress by remember { mutableStateOf("") } //IP 주소
     var isProfileDone by remember { mutableStateOf(false) } //프로필창 전부 채웠는지 여부
@@ -51,50 +43,89 @@ fun mainScreen() {
     var connection by remember { mutableStateOf<ClientConnection?>(null) } //클라이언트와 서버간에 name, ip, port 상호작용
     var isPortError by remember { mutableStateOf(false) } // 받아온 port를 Int형으로 치환 시 오류 발생 여부
     var isConnectError by remember { mutableStateOf(false) } // 서버 접속 실패 여부
-
-    if (isGameStart) { //프로필 작성 완료 및 버튼 클릭 시 서버에 갔다가 myName 받아오기
-        GameScreen(
-            myName = myName,
-            playerList = playerList,
-            connection = connection
+    val sharedChatList = remember { mutableStateListOf<ChatMessage>()} //공유 채팅 리슽 추가
+    MaterialTheme(
+        typography = Typography(  // ← 추가
+            bodyLarge = TextStyle(fontFamily = jua),
+            bodyMedium = TextStyle(fontFamily = jua),
+            bodySmall = TextStyle(fontFamily = jua),
+            titleLarge = TextStyle(fontFamily = jua),
+            titleMedium = TextStyle(fontFamily = jua),
+            titleSmall = TextStyle(fontFamily = jua),
+            labelLarge = TextStyle(fontFamily = jua),
+            labelMedium = TextStyle(fontFamily = jua),
+            labelSmall = TextStyle(fontFamily = jua),
         )
-    } else if (isProfileDone) { //프로필 작성만 true일 시
-        PrepareScreen( // 게임 시작 버튼 클릭 시 대기화면으로 이동
-            myName = myName,
-            connection = connection,
-            playerList = playerList,
-            onGameStart = { isGameStart = true }
-        )
-    } else {
-        ProfileScreen( //작성 완료까지 기다리다가 완료되면 받아오기
-            isPortError = isPortError, //포트 오류 확인
-            isConnectError = isConnectError, // 서버 접속 실패 확인 ← 추가
-            onConfirm = { name, port, ip ->
-                myName = name
-                portNumber = port
-                ipAddress = ip
-                val portInt = port.toIntOrNull()
-                if (portInt == null) isPortError = true
-                else {
-                    isPortError = false
-                    try {
-                        connection = ClientConnection(
-                            ip = ip,
-                            port = portInt,
-                            userName = name
-                        )
-                        connection?.connect()
-                        isProfileDone = true  // ← 성공 시에만 이동
-                    } catch (e: Exception) {
-                        /// 기존 코드 (서버 있을 때)
-                        // isConnectError = true
-                        // isProfileDone = false
-                        // 테스트용 더미 -> 서버 열리면 삭제
-                        isProfileDone = true  // 서버 없어도 다음 화면으로
+    ) {
+        var playerList by remember {
+            mutableStateOf<List<Triple<String, Int, Int>>>(
+                listOf( //더미 리스트 추가 원래였으면 emptyList로 해야함 -> 서버 연동 시 삭제
+                    Triple("홍길동", 0, 0),
+                    Triple("김철수", 0, 0),
+                    Triple("이영희", 0, 0),
+                    Triple("박민준", 0, 0),
+                    Triple("최지우", 0, 0),
+                    Triple("이준호", 0, 0)
+                )
+            )
+        }
+        LaunchedEffect(Unit) {
+            if (sharedChatList.isEmpty()) {
+                sharedChatList.addAll(
+                    listOf(
+                        ChatMessage("홍길동", "안녕하세요!"),
+                        ChatMessage("김철수", "빨리 시작해요~"),
+                        ChatMessage(myName, "저도 왔어요!")
+                    )
+                )
+            }
+        }
+        if (isGameStart) { //프로필 작성 완료 및 버튼 클릭 시 서버에 갔다가 myName 받아오기
+            GameScreen(
+                myName = myName, //사용자명
+                playerList = playerList, //사용자 리스트("이동욱", "0", "0")
+                connection = connection, //연결확인
+                sharedChatList = sharedChatList //채팅창 연결
+            )
+        } else if (isProfileDone) { //프로필 작성만 true일 시
+            PrepareScreen( // 게임 시작 버튼 클릭 시 대기화면으로 이동
+                myName = myName,
+                connection = connection,
+                playerList = playerList,
+                sharedChatList = sharedChatList,
+                onGameStart = { isGameStart = true } //게임시작여부
+            )
+        } else {
+            ProfileScreen( //작성 완료까지 기다리다가 완료되면 받아오기
+                isPortError = isPortError, //포트 오류 확인
+                isConnectError = isConnectError, // 서버 접속 실패 확인 ← 추가
+                onConfirm = { name, port, ip ->
+                    myName = name
+                    portNumber = port
+                    ipAddress = ip
+                    val portInt = port.toIntOrNull()
+                    if (portInt == null) isPortError = true
+                    else {
+                        isPortError = false
+                        try {
+                            connection = ClientConnection(
+                                ip = ip,
+                                port = portInt,
+                                userName = name
+                            )
+                            connection?.connect()
+                            isProfileDone = true  // ← 성공 시에만 이동
+                        } catch (e: Exception) {
+                            /// 기존 코드 (서버 있을 때)
+                            // isConnectError = true
+                            // isProfileDone = false
+                            // 테스트용 더미 -> 서버 열리면 삭제
+                            isProfileDone = true  // 서버 없어도 다음 화면으로
+                        }
                     }
                 }
-            }
-        )
+            )
+        }
     }
 }
 
@@ -114,8 +145,8 @@ fun GameScreen(
     countRound: Int = 1, // 더미, 현재 판 수
     totalRound: Int = 5, // 더미, 총 판 수
     timer: Int = 30, // 더미, 실제 서버 시간에서 받아올 것
-    userChat: String = "", // 게임 로직에서 하나씩 전달
     isGameOver: Boolean = false, // 게임 종료 시 true
+    sharedChatList: MutableList<ChatMessage> = mutableStateListOf(), //채팅 리스트 선언
 
     // AI 프롬프트 담당자에게 받는 데이터
     easyWordHint: String = "ㄱ미ㅎㄱ",  //더미, 쉬움 초성 힌트(단어가 3개 이하)가 들어올 시 문제 업데이트용
@@ -125,7 +156,7 @@ fun GameScreen(
     hardHint: String = "주식으로 개미를 먹습니다" //더미, 어려움 특성 힌트(단어가 4개 이상)가 들어올 시 삽입함
 ) {
     var input by remember { mutableStateOf("") }
-    val chatList = remember { mutableStateListOf("안녕", "이거 강아지 아님?") } // 더미
+    val listState = rememberLazyListState()
     val sortedPlayerList = playerList.sortedByDescending { it.second } //내림차순 정렬로 큰 수가 위로 가게 정렬
     // ============================================================
     // //GameOver로직이 잘 작동되는지 확인하기 위한 더미 기믹 - 구현 시 삭제
@@ -150,26 +181,18 @@ fun GameScreen(
     }
     // ============================================================
 
-    //채팅 입력 시(값이 바뀜 = 입력) 실행
-    LaunchedEffect(userChat) {
-        if (userChat.isNotEmpty()) { //빈 채팅 여부
-            chatList.add(userChat)
-        }
-    }
-
-    //서버에서 채팅 메시지 가져오기
-    val chatMessages by connection?.viewModel?.messages
-        ?.collectAsState(emptyList())
-        ?: remember { mutableStateOf(emptyList()) }
-
     Box(modifier = Modifier.fillMaxSize()) {
-        Row(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(LightPurple)
+        ) {
             // 좌측 - 플레이어 목록
             Column(
                 modifier = Modifier
                     .weight(0.2f) //20% 차지
                     .fillMaxHeight() //세로 최대 차지
-                    .border(1.dp, Color.Black) //테두리 검정
+                    .border(1.dp, Purple) //테두리 검정
             ) {
                 sortedPlayerList.forEach { (name, score, correct) ->
                     PlayerCard(name = name, score = score) //카드에 삽입 및 추가
@@ -179,9 +202,9 @@ fun GameScreen(
             // 중앙 - 게임 영역
             Column(
                 modifier = Modifier
-                    .weight(0.6f)
+                    .weight(0.5f)
                     .fillMaxHeight()
-                    .border(1.dp, Color.Black)
+                    .border(1.dp, Purple)
             ) {
                 RoundDisplay( //라운드 표시
                     countRound = countRound
@@ -198,7 +221,7 @@ fun GameScreen(
 
                 CategoryDisplay( //카테고리 표시
                     modifier = Modifier
-                        .weight(0.4f)
+                        .weight(0.6f)
                         .fillMaxWidth(),
                     quizCategory = quizCategory
                 )
@@ -219,19 +242,20 @@ fun GameScreen(
             } // 중앙 끝
             // 우측 - 채팅 목록
             ChatList(
-                chatMessages = chatMessages,
+                chatMessages = sharedChatList,
                 myName = myName,
                 modifier = Modifier
-                    .weight(0.2f)
+                    .weight(0.3f)
                     .fillMaxHeight()
-                    .border(1.dp, Color.Gray)
+                    .border(1.dp, Purple)
             )
         } // 우측 끝
+        //게임 오버레이
         if(dummyGameOver){ //나중에 isGameOver로 변경해야함
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.7f)), //반투명 화면정도 조절
+                    .background(DarkPurpleOverlay), //반투명 화면정도 조절
                 contentAlignment = Alignment.Center
             ){
                 GameOver(
@@ -256,11 +280,14 @@ fun PlayerCard(
     score: Int = 0, //사용자 점수
 ) {
     Card(
+        colors = CardDefaults.cardColors(
+            containerColor = LightPurple  // ← 연보라 배경
+        ),
         modifier = Modifier
             .fillMaxWidth() //너비 최대(할당된 비율을 꽉 채움)
             .height(60.dp) //크기:60
             .padding(4.dp), //사이간격: 4
-        border = BorderStroke(1.dp, Color.Black), //테두리
+        border = BorderStroke(1.dp, Purple), //테두리
         shape = RectangleShape //사각형으로 카드 Radius 변경
         ){
         Text(
@@ -279,6 +306,7 @@ fun RoundDisplay(
     countRound: Int
 ) {
     Text(
+        color = DarkPurple,
         text = "${countRound}라운드",
         modifier = Modifier
             .fillMaxWidth()
@@ -299,6 +327,7 @@ fun TimerDisplay(
         text = "${timer}초",
         fontSize = 20.sp,
         fontWeight = FontWeight.Bold,
+        color = if (timer < 5) Coral else DarkPurple,  // ← 5초 미만이면 Coral, 아니면 DarkPurple
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
@@ -316,8 +345,10 @@ fun WordDisplay(
     word: String
 ) {
     Card(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = White  // ← 흰색 배경
+        ),
         border = BorderStroke(1.dp, Color.Black),
         shape = RectangleShape
     ) {
@@ -327,7 +358,7 @@ fun WordDisplay(
         ) {
             Text(
                 text = word,
-                fontSize = 100.sp, //크기 설정
+                fontSize = 60.sp, //크기 설정
                 fontWeight = FontWeight.Bold, //굵기 설정
                 //텍스트 패딩은 중앙 정렬이라 필요 없어서 제거
             )
@@ -345,9 +376,12 @@ fun CategoryDisplay(
     modifier: Modifier = Modifier
 ){
     Card(
+        colors = CardDefaults.cardColors(
+            containerColor = White
+        ),
         modifier = modifier
             .fillMaxWidth(),
-        border = BorderStroke(1.dp, Color.Black),
+        border = BorderStroke(1.dp, Black),
         shape = RectangleShape
     ){
         Text(
@@ -371,10 +405,13 @@ fun HintDisplay(
 ) {
     Column(modifier = modifier){ //힌트칸 3개
         Card(
+            colors = CardDefaults.cardColors(
+                containerColor = White  // ← 흰색 배경
+            ),
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth(),
-            border = BorderStroke(1.dp, Color.Black),
+            border = BorderStroke(1.dp, Black),
             shape = RectangleShape
         ) {
             Box(
@@ -388,6 +425,9 @@ fun HintDisplay(
             }
         }
         Card(
+            colors = CardDefaults.cardColors(
+                containerColor = White  // ← 흰색 배경
+            ),
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth(),
@@ -405,6 +445,9 @@ fun HintDisplay(
             }
         }
         Card(
+            colors = CardDefaults.cardColors(
+                containerColor = White  // ← 흰색 배경
+            ),
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth(),
@@ -438,8 +481,8 @@ fun WordInput(
         onValueChange = onInputChange,
         placeholder = { Text("정답을 입력하세요") },
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = Color.Blue, //클릭 시 파랑
-            unfocusedBorderColor = Color.Black, //평소엔 검정
+            focusedBorderColor = Purple,
+            unfocusedBorderColor = PurpleHalf
         ),
         modifier = Modifier
             .fillMaxWidth()

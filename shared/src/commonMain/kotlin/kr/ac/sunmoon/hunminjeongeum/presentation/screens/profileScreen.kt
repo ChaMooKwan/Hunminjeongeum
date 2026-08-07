@@ -26,49 +26,65 @@ fun ProfileScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
+        Text( //닉네임 처리
             text = "닉네임을 입력하세요",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
+            color = DarkPurple, //텍스트 다크 퍼플이 좋대서 해봄 - 변경 가능
             modifier = Modifier.padding(16.dp)
         )
         OutlinedTextField(
             value = myName,
             onValueChange = {
                 myName = it
-                isError = false  // 입력 시 에러 초기화
+                isError = false  //입력 시 에러 초기화
             },
             placeholder = { Text("닉네임") },
-            isError = isError,  // 에러 표시
+            isError = isError,  //에러 표시
+            //
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Purple, //클릭 시 보라
+                unfocusedBorderColor = Purple.copy(alpha = 0.5f), //평소 연한 보라
+                focusedLabelColor = Purple,
+                cursorColor = Purple
+            ),
             modifier = Modifier.padding(16.dp)
         )
-        Text(
+        Text( //포트번호 처리
             text = "포트번호를 입력하세요",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
+            color = DarkPurple, //텍스트 다크 퍼플이 좋대서 해봄
             modifier = Modifier.padding(16.dp)
         )
         OutlinedTextField(
             value = portNumber,
             onValueChange = {
                 portNumber = it
-                isError = false  // 입력 시 에러 초기화
+                isError = false  //입력 시 에러 초기화
             },
             placeholder = { Text("포트번호") },
-            isError = isError,  // 에러 표시
+            isError = isError,  //에러 표시
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Purple,
+                unfocusedBorderColor = Purple.copy(alpha = 0.5f),
+                focusedLabelColor = Purple,
+                cursorColor = Purple
+            ),
             modifier = Modifier.padding(16.dp)
         )
-        if(isPortError){
+        if(isPortError){ //포트 오류 안내 문구
             Text(
                 text = "포트 오류: 숫자 입력",
                 color = Color.Red,
                 modifier = Modifier.padding(4.dp)
             )
         }
-        Text(
+        Text( //IP 처리
             text = "IP를 입력하세요",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
+            color = DarkPurple, //텍스트 색
             modifier = Modifier.padding(16.dp)
         )
         OutlinedTextField(
@@ -79,9 +95,15 @@ fun ProfileScreen(
             },
             placeholder = { Text("ip") },
             isError = isError,  // 에러 표시
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Purple,
+                unfocusedBorderColor = Purple.copy(alpha = 0.5f),
+                focusedLabelColor = Purple,
+                cursorColor = Purple
+            ),
             modifier = Modifier.padding(16.dp)
         )
-        // 빈 칸일 때 에러 문구
+        //빈 칸일 때 에러 문구
         if (isError) {
             Text(
                 text = "닉네임을 입력해주세요",
@@ -107,7 +129,11 @@ fun ProfileScreen(
                 } else {
                     onConfirm(trimName, trimPort, trimIp)
                 }
-            }
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Purple  // ← 버튼 보라
+            ),
+            modifier = Modifier.padding(16.dp)
         ) {
             Text("확인")
         }
