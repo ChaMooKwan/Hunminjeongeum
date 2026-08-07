@@ -5,20 +5,32 @@ package kr.ac.sunmoon.hunminjeongeum.presentation.viewmodels
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlin.collections.emptyList
 
 class ChatMessage(
     val userName: String,
     val message: String,
 )
 
+class UserInfo(
+    val userName: String,
+    val score: Int,
+)
+
 // 채팅방 정보를 저장하는 클래스 MutableStateFlow와 .update를 통해 변경 시 Compose에게 알림
-class ChatViewModel(): ViewModel() {
-    private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
+class ViewModel<T>(): ViewModel() {
+    private val _messages = MutableStateFlow<List<T>>(emptyList())
     val messages = _messages
 
-    fun updateChatHistory(message: ChatMessage){
+
+    fun update(message: T){
         _messages.update{
             it + message
+        }
+    }
+    fun updateScore(scores: List<T>){
+        _messages.update{
+            scores
         }
     }
 }
