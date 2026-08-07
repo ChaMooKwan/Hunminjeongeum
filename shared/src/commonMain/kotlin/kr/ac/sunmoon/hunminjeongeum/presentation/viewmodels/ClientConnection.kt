@@ -1,4 +1,4 @@
-package kr.ac.sunmoon.hunminjeongeum.presentation.viewmodels
+package kr.ac.sunmoon
 
 import java.io.PrintWriter
 import java.net.Socket
@@ -108,7 +108,7 @@ class ClientConnection(
     }
 
     // [3번 게임 창]에서 확인 버튼 누르면 호출하면 된다.
-    private fun sendChat(message: String) {
+    fun sendChat(message: String) {
         val sendingMessage = "/chat,$userName,$message"
         writer.println(sendingMessage)
     }

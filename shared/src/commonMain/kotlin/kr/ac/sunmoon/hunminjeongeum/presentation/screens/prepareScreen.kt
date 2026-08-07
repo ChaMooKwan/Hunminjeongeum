@@ -179,7 +179,7 @@ fun PrepareScreen(
                                 chatList.add(ChatMessage(dummyMyName, message))
                             } else {
                                 try {
-                                    connection.send(message) // 서버로 메시지 전송
+                                    connection.sendChat(message) // 서버로 메시지 전송
                                 } catch (e: Exception) { }
                             }
                             input = "" // 입력창 초기화
