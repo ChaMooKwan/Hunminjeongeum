@@ -19,9 +19,10 @@ class ClientConnection(
     private lateinit var reader: BufferedReader
     private lateinit var writer: PrintWriter
     val chatViewModel = ViewModel<ChatMessage>()
-    val userNameViewModel = ViewModel<String>()
     val questionViewModel = ViewModel<String>() // 마지막 배열 값만 정답 화면에 출력해야 함. .last사용해서
-    val scoreViewModel = ViewModel<Int>()
+    val userInfoViewModel = ViewModel<UserInfo>()
+    val timerViewModel = ViewModel<Int>()
+    var isGameStarted = false
 
     // [1번 화면]의 닉네임, 아이피, 포트 입력하고 확인 눌렀을 때 호출한다.
     fun connect() {
@@ -42,16 +43,19 @@ class ClientConnection(
                 }
                 else if (received.contains("/chat,")) {
                     updateChat(decodeChat(received))
+                    println(received)
                 }
                 else if (received.contains("/playGame,")) {
-                    // 3번 창으로 넘어가기(3번창 호출?)
-                    // isStarted = true??
+                    isGameStarted = true
                 }
                 else if (received.contains("/question,")) {
                     updateQuestion(decodeQuestion(received))
                 }
                 else if (received.contains("/score,")){
                     updateScore(decodeScore(received))
+                }
+                else if (received.contains("/timer,")) {
+                    updateTimer(decodeTimer(received))
                 }
             }
         }
@@ -69,12 +73,12 @@ class ClientConnection(
         return userNames
     }
     private fun updateUserNames(userNames: List<String>){
-        userNameViewModel.update(userName)
+        userInfoViewModel.update(UserInfo(userName,0))
     }
     private fun decodeChat(received: String): ChatMessage {
-        // !! 서버는 ChatMessage 클래스에서 속성인 userName과 message를 ,를 구분자로 하여 전송한다.
         val list: List<String> = received.split(",")
-        val chatMessage = ChatMessage(list[1], list.last())
+        val stringChatMessage = list[1].split("&")
+        val chatMessage = ChatMessage(stringChatMessage[0], stringChatMessage.last())
         return chatMessage
     }
     private fun updateChat(chatMessage: ChatMessage){
@@ -89,17 +93,31 @@ class ClientConnection(
         questionViewModel.update(question)
     }
 
-    private fun decodeScore(received: String): List<Int>{
+    private fun decodeScore(received: String): List<UserInfo>{// "/score,이름$점수,이름&점수"
         val list:List<String> = received.split(",")
-        val scores = mutableListOf<Int>()
+        val stringUserInfos = mutableListOf<String>()
         for (i in 1 until list.size){
-            scores.add(list[i].toInt())
+            stringUserInfos.add(list[i])
         }
-        return scores
+        val userInfos = mutableListOf<UserInfo>()
+        stringUserInfos.forEach{
+            val userInfo = it.split("$")
+            userInfos.add(UserInfo(userInfo[0],userInfo[1].toInt()))
+        }
+        return userInfos
     }
 
-    private fun updateScore(scores: List<Int>){
-        scoreViewModel.updateScore(scores)
+    private fun updateScore(userInfos: List<UserInfo>){
+        userInfoViewModel.updateScore(userInfos)
+    }
+
+    private fun decodeTimer(received: String): List<Int>{
+        val list: List<String> = received.split(",")
+        val timer = listOf<Int>(list[1].toInt())
+        return timer
+    }
+    private fun updateTimer(timer: List<Int>){
+        timerViewModel.updateScore(timer)
     }
 
     // [2번 대기자 창]에서 게임 시작 버튼 누르면 onClick ={ a.startGame() }에서 호출
@@ -109,7 +127,10 @@ class ClientConnection(
 
     // [3번 게임 창]에서 확인 버튼 누르면 호출하면 된다.
     fun sendChat(message: String) {
-        val sendingMessage = "/chat,$userName,$message"
+        println("print plz")
+        val sendingMessage = "/chat,$userName&$message"
+        print("plzzzzzzzzz")
         writer.println(sendingMessage)
+        print("yes!")
     }
 }

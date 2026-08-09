@@ -19,39 +19,17 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PrepareScreen(
     myName: String, //현재 사용자 이름
-    connection: ClientConnection? = null, //서버 연결(더미 null 제거)
-    playerList: List<Triple<String, Int, Int>> = emptyList(), //플레이어 목록
+    connection: ClientConnection,
     leftPlayer: Int = 4, //좌측 사용자수
     rightPlayer: Int = 3, //우측 사용자수
-    sharedChatList: MutableList<ChatMessage> = mutableStateListOf(), //채팅창 main에 공유 - 서버 연동 시 사용
     onGameStart: () -> Unit //게임 시작 신호
 ) {
     // =======================================================================================
     // 더미 데이터 - 서버 연동 시 삭제
     val dummyMyName = if (myName.isEmpty()) "나" else myName // myName 비어있으면 "나"로 대체
 
-    val chatList = remember { // 채팅 리스트 - 서버 연동 시 sharedChatList로 교체
-        mutableStateListOf(
-            ChatMessage("홍길동", "안녕하세요!"),
-            ChatMessage("김철수", "빨리 시작해요~"),
-            ChatMessage(dummyMyName, "저도 왔어요!"),
-            ChatMessage("홍길동", "반가워요!"),
-            ChatMessage("김철수", "빨리해요~"),
-            ChatMessage(dummyMyName, "저도 왔어요!"),
-            ChatMessage("홍길동", "안녕하세요!"),
-            ChatMessage("김철수", "빨리 시작해요~"),
-            ChatMessage(dummyMyName, "저도 왔어요!"),
-            ChatMessage("홍길동", "반가워요!"),
-            ChatMessage("김철수", "빨리해요~"),
-            ChatMessage(dummyMyName, "저도 왔어요!"),
-            ChatMessage("홍길동", "안녕하세요!"),
-            ChatMessage("김철수", "빨리 시작해요~"),
-            ChatMessage(dummyMyName, "저도 왔어요!"),
-            ChatMessage("홍길동", "반가워요!"),
-            ChatMessage("김철수", "빨리해요~"),
-            ChatMessage(dummyMyName, "저도 왔어요!"),
-        )
-    }
+    val chatList by connection.chatViewModel.messages.collectAsState()
+    val playerList by connection.userInfoViewModel.messages.collectAsState()
     // =======================================================================================
 
     var input by remember { mutableStateOf("") } //메시지 입력값
@@ -107,7 +85,7 @@ fun PrepareScreen(
                     ) {
                         Text(
                             // 사용자 입장 시 이름 표시, 없으면 대기중 표시
-                            text = if (i < playerList.size) playerList[i].first else "대기중...",
+                            text = if (i < playerList.size) playerList[i].userName else "대기중...",
                             color = if (i < playerList.size) Color.Black else Color.Gray,
                             modifier = Modifier.padding(8.dp)
                         )
@@ -176,7 +154,7 @@ fun PrepareScreen(
                         if (message.isNotEmpty()) { // 빈 메시지 방지
                             if (connection == null) {
                                 // 더미 - 서버 없을 때 로컬에 추가
-                                chatList.add(ChatMessage(dummyMyName, message))
+                                //chatList.add(ChatMessage(dummyMyName, message))
                             } else {
                                 try {
                                     connection.sendChat(message) // 서버로 메시지 전송
@@ -222,7 +200,7 @@ fun PrepareScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (i < playerList.size) playerList[i].first else "대기중...",
+                            text = if (i < playerList.size) playerList[i].userName else "대기중...",
                             color = if (i < playerList.size) Color.Black else Color.Gray,
                             modifier = Modifier.padding(8.dp)
                         )

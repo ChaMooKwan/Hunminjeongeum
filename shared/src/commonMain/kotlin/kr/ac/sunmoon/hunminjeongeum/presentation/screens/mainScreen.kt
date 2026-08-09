@@ -43,7 +43,7 @@ fun mainScreen() {
     var connection by remember { mutableStateOf<ClientConnection?>(null) } //클라이언트와 서버간에 name, ip, port 상호작용
     var isPortError by remember { mutableStateOf(false) } // 받아온 port를 Int형으로 치환 시 오류 발생 여부
     var isConnectError by remember { mutableStateOf(false) } // 서버 접속 실패 여부
-    val sharedChatList = remember { mutableStateListOf<ChatMessage>()} //공유 채팅 리슽 추가
+
     MaterialTheme(
         typography = Typography(  // ← 추가
             bodyLarge = TextStyle(fontFamily = jua),
@@ -57,42 +57,15 @@ fun mainScreen() {
             labelSmall = TextStyle(fontFamily = jua),
         )
     ) {
-        var playerList by remember {
-            mutableStateOf<List<Triple<String, Int, Int>>>(
-                listOf( //더미 리스트 추가 원래였으면 emptyList로 해야함 -> 서버 연동 시 삭제
-                    Triple("홍길동", 0, 0),
-                    Triple("김철수", 0, 0),
-                    Triple("이영희", 0, 0),
-                    Triple("박민준", 0, 0),
-                    Triple("최지우", 0, 0),
-                    Triple("이준호", 0, 0)
-                )
-            )
-        }
-        LaunchedEffect(Unit) {
-            if (sharedChatList.isEmpty()) {
-                sharedChatList.addAll(
-                    listOf(
-                        ChatMessage("홍길동", "안녕하세요!"),
-                        ChatMessage("김철수", "빨리 시작해요~"),
-                        ChatMessage(myName, "저도 왔어요!")
-                    )
-                )
-            }
-        }
         if (isGameStart) { //프로필 작성 완료 및 버튼 클릭 시 서버에 갔다가 myName 받아오기
             GameScreen(
                 myName = myName, //사용자명
-                playerList = playerList, //사용자 리스트("이동욱", "0", "0")
                 connection = connection, //연결확인
-                sharedChatList = sharedChatList //채팅창 연결
             )
         } else if (isProfileDone) { //프로필 작성만 true일 시
             PrepareScreen( // 게임 시작 버튼 클릭 시 대기화면으로 이동
                 myName = myName,
-                connection = connection,
-                playerList = playerList,
-                sharedChatList = sharedChatList,
+                connection = connection!!,
                 onGameStart = { isGameStart = true } //게임시작여부
             )
         } else {
@@ -210,7 +183,7 @@ fun GameScreen(
                     countRound = countRound
                 )
 
-                TimerDisplay(timer = timeLeft) // 시간 표시, 현재 더미용 timeLeft로 시간 확인 나중에 timer로 복구할것
+                TimerDisplay(connection = connection!!) // 시간 표시, 현재 더미용 timeLeft로 시간 확인 나중에 timer로 복구할것
 
                 WordDisplay( //문제 표시
                     modifier = Modifier
@@ -321,13 +294,13 @@ fun RoundDisplay(
 // =====================
 @Composable
 fun TimerDisplay(
-    timer: Int = 30  // 더미, 로직 팀원이 전달
+    connection: ClientConnection,  // 더미, 로직 팀원이 전달
 ) {
     Text(
-        text = "${timer}초",
+        text = "${connection.timerViewModel.messages.value[0]}초",
         fontSize = 20.sp,
         fontWeight = FontWeight.Bold,
-        color = if (timer < 5) Coral else DarkPurple,  // ← 5초 미만이면 Coral, 아니면 DarkPurple
+        color = if (connection.timerViewModel.messages.value[0] < 5) Coral else DarkPurple,  // ← 5초 미만이면 Coral, 아니면 DarkPurple
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
