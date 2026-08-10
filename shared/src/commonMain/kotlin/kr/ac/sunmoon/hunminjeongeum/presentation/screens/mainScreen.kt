@@ -237,7 +237,6 @@ fun GameScreen(
                         isGameOverDismissed = true
                         onEndButtonClicked()
                         connection.chatViewModel.clearMessages()
-
                     }
                 )
             }
