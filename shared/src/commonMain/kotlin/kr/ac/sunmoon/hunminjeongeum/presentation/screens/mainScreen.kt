@@ -19,7 +19,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults //focused, unfocused
 import androidx.compose.ui.Alignment //Box, Column, Row 등 정렬 방향 설정
 import androidx.compose.ui.text.font.FontWeight //FontWeight.Bold,Normal 등 텍스트 굵기 설정
 import androidx.compose.ui.unit.sp //사용자 폰트 크기 설정에 반영
-import kotlinx.coroutines.delay //시간 확인 -> 서버 처리 할거라 쓸모 없음
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.background // 오버레이 화면 띄우고, alpha를 사요해 게임 화면 창 원하는 정도로 흐릿하게 하기
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -28,7 +27,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.material3.Typography
 import kotlin.String
-import kotlin.Triple
 
 //전체적인 색상변경 및 디자인 변경이 필요함
 @Composable
@@ -137,7 +135,7 @@ fun GameScreen(
     val timerValues by connection.timerViewModel.messages.collectAsState()
     val currentTime = timerValues.firstOrNull()
     val sortedPlayerList = playerList.sortedByDescending { it.score } //내림차순 정렬로 큰 수가 위로 가게 정렬
-    val sharedChatList by connection!!.chatViewModel.messages.collectAsState()
+    val chatMessages by connection!!.chatViewModel.messages.collectAsState()
     // ============================================================
     // //GameOver로직이 잘 작동되는지 확인하기 위한 더미 기믹 - 구현 시 삭제
     var isGameOverDismissed by remember{mutableStateOf(false)}
@@ -219,7 +217,7 @@ fun GameScreen(
             } // 중앙 끝
             // 우측 - 채팅 목록
             ChatList(
-                chatMessages = sharedChatList,
+                chatMessages = chatMessages,
                 myName = myName,
                 modifier = Modifier
                     .weight(0.3f)
@@ -543,7 +541,7 @@ fun GameOver(
             // 플레이어별 결과 표시
             myResult?.let{ userInfo -> //myResult가 있을 시 실행
                 Text(
-                    text = "${userInfo.userName} :/ $totalRound\n 점수: ${userInfo.score}", //이동욱: 3 / 10, 밑에는 점수:150 으로 표현
+                    text = "${userInfo.userName} /$totalRound\n 점수: ${userInfo.score}", //이동욱: 3 / 10, 밑에는 점수:150 으로 표현
                     modifier = Modifier.padding(8.dp),
                     textAlign = TextAlign.Center
                 )
