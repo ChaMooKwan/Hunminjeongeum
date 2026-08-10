@@ -35,8 +35,6 @@ fun PrepareScreen(
     var input by remember { mutableStateOf("") } //메시지 입력값
     val listState = rememberLazyListState() //스크롤 상태 관리
 
-    // 화면 진입 시 한번 실행
-    // 2번에서 startReceiver() 호출(3번에서도 지금 호출한 것을 지속해서 사용)
     LaunchedEffect(Unit) {
         if (connection != null) { //서버 연결되어 있을 때만 실행
             try {
@@ -85,7 +83,10 @@ fun PrepareScreen(
                     ) {
                         Text(
                             // 사용자 입장 시 이름 표시, 없으면 대기중 표시
-                            text = if (i < playerList.size) playerList[i].userName else "대기중...",
+                            text = if (i < playerList.size) {
+                                println("${playerList[i]}")
+                                playerList[i].userName
+                            } else "대기중...",
                             color = if (i < playerList.size) Color.Black else Color.Gray,
                             modifier = Modifier.padding(8.dp)
                         )
@@ -120,14 +121,14 @@ fun PrepareScreen(
                     ) {
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = if (chatMessage.userName == dummyMyName) //서버 연동 시 myName으로 교체
+                                containerColor = if (chatMessage.userName == myName) //서버 연동 시 myName으로 교체
                                     LightPurple  // 내 메시지 연보라
                                 else
                                     White        // 상대 메시지 흰색
                             ),
                             border = BorderStroke(
                                 1.dp,
-                                if (chatMessage.userName == dummyMyName) Purple else Gray //서버 연동 시 myName으로 교체
+                                if (chatMessage.userName == myName) Purple else Gray //서버 연동 시 myName으로 교체
                             )
                         ) {
                             Text(

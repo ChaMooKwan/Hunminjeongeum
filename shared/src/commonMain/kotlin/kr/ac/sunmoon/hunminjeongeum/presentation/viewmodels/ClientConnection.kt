@@ -39,6 +39,7 @@ class ClientConnection(
                 val received: String = reader.readLine()
 
                 if (received.contains("/userNames,")) {
+                    println(received)
                     updateUserNames(decodeUserNames(received))
                 }
                 else if (received.contains("/chat,")) {

@@ -108,18 +108,13 @@ fun mainScreen() {
 // =====================
 @Composable
 fun GameScreen(
-    // 게임 로직 담당자에게 받는 데이터
-    //더미데이터는 실제 실행 시 지울 것
-    playerList: List<Triple<String, Int, Int>> = emptyList(), // 플레이어 리스트 가져오기
     myName:String = "이동욱", //더미, 사용자명
     connection: ClientConnection ?= null, //서버 불러오기
     quizCategory: String = "동물", //더미, 문제 카테고리
-    wordQuiz: String = "ㄱㅁㅎㄱ", // 더미, 문제 초성
     countRound: Int = 1, // 더미, 현재 판 수
     totalRound: Int = 5, // 더미, 총 판 수
     timer: Int = 30, // 더미, 실제 서버 시간에서 받아올 것
     isGameOver: Boolean = false, // 게임 종료 시 true
-    sharedChatList: MutableList<ChatMessage> = mutableStateListOf(), //채팅 리스트 선언
 
     // AI 프롬프트 담당자에게 받는 데이터
     easyWordHint: String = "ㄱ미ㅎㄱ",  //더미, 쉬움 초성 힌트(단어가 3개 이하)가 들어올 시 문제 업데이트용
@@ -130,28 +125,18 @@ fun GameScreen(
 ) {
     var input by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
-    val sortedPlayerList = playerList.sortedByDescending { it.second } //내림차순 정렬로 큰 수가 위로 가게 정렬
+    val currentWord by connection!!.questionViewModel.messages.collectAsState()
+    val wordQuiz by connection!!.questionViewModel.messages.collectAsState()
+    val sortedPlayerList = connection!!.userInfoViewModel.messages.value.sortedByDescending { it.score } //내림차순 정렬로 큰 수가 위로 가게 정렬
+    val sharedChatList by connection!!.chatViewModel.messages.collectAsState()
     // ============================================================
     // //GameOver로직이 잘 작동되는지 확인하기 위한 더미 기믹 - 구현 시 삭제
     var dummyGameOver by remember{mutableStateOf(false)}
     var timeLeft by remember { mutableStateOf(30) }
     // ============================================================
-    val wordCount = wordQuiz.length //단어 개수확인용
-    val hintState = quizSelector(wordCount, timeLeft) //값 집어넣기
-    val currentWord = when{ //단어 덮어씌우기
-        hintState["normalWordHint"] == true -> normalWordHint //힌트 조건이 성립 시
-        hintState["easyWordHint"] == true -> easyWordHint
-        else -> wordQuiz
-    }
-    // ============================================================
-    //더미 시간 데이터
-    LaunchedEffect(Unit) {
-        while (timeLeft > 0) {
-            delay(1000L)
-            timeLeft--
-        }
-        dummyGameOver = true  // ← 0초 되면 자동으로 GameOver
-    }
+    val last:Int = wordQuiz.lastIndex
+    //val wordCount = wordQuiz[last].length //단어 개수확인용
+    //val hintState = quizSelector(wordCount, timeLeft) //값 집어넣기
     // ============================================================
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -167,8 +152,8 @@ fun GameScreen(
                     .fillMaxHeight() //세로 최대 차지
                     .border(1.dp, Purple) //테두리 검정
             ) {
-                sortedPlayerList.forEach { (name, score, correct) ->
-                    PlayerCard(name = name, score = score) //카드에 삽입 및 추가
+                sortedPlayerList.forEach { userInfo ->
+                    PlayerCard(name = userInfo.userName, score = userInfo.score) //카드에 삽입 및 추가
                 }
             } // ← 좌측 Column 닫힘
 
@@ -183,13 +168,13 @@ fun GameScreen(
                     countRound = countRound
                 )
 
-                TimerDisplay(connection = connection!!) // 시간 표시, 현재 더미용 timeLeft로 시간 확인 나중에 timer로 복구할것
+                //TimerDisplay(connection = connection!!) // 시간 표시, 현재 더미용 timeLeft로 시간 확인 나중에 timer로 복구할것
 
                 WordDisplay( //문제 표시
                     modifier = Modifier
                         .weight(3f)
                         .fillMaxWidth(),
-                    word = currentWord //처음엔 초성, 그 후로는 초성힌트로 업데이트
+                    word = wordQuiz[last] //처음엔 초성, 그 후로는 초성힌트로 업데이트
                 )
 
                 CategoryDisplay( //카테고리 표시
@@ -203,9 +188,9 @@ fun GameScreen(
                     modifier = Modifier
                         .weight(1.5f)
                         .fillMaxWidth(),
-                    easyHint   = if (hintState["easyHint"]   == true) easyHint   else "",
-                    normalHint = if (hintState["normalHint"] == true) normalHint else "",
-                    hardHint   = if (hintState["hardHint"]   == true) hardHint   else ""
+//                    easyHint   = if (hintState["easyHint"]   == true) easyHint   else "",
+//                    normalHint = if (hintState["normalHint"] == true) normalHint else "",
+//                    hardHint   = if (hintState["hardHint"]   == true) hardHint   else ""
                 )
 
                 WordInput( //입력창 표시
@@ -232,7 +217,7 @@ fun GameScreen(
                 contentAlignment = Alignment.Center
             ){
                 GameOver(
-                    playerList = playerList,
+                    playerList = sortedPlayerList,
                     totalRound = totalRound,
                     myName = myName,
                     onConfirm = {dummyGameOver = false }
@@ -507,12 +492,12 @@ fun ChatList(
 @Composable
 fun GameOver(
     // 게임 로직에서 받아올 것
-    playerList: List<Triple<String, Int, Int>>, // 이름, 맞힌 수
+    playerList: List<UserInfo>, // 이름, 맞힌 수
     totalRound: Int, // 총 문제 수
     myName: String, // 사용자명
     onConfirm: () -> Unit // 확인 버튼 클릭
 ) {
-    val myResult = playerList.find {it.first == myName}
+    val myResult = playerList.find {it.userName == myName}
     Card(
         modifier = Modifier
             .fillMaxWidth(0.5f)
@@ -534,9 +519,9 @@ fun GameOver(
                 modifier = Modifier.padding(16.dp) //중앙으로 변경할 예정
             )
             // 플레이어별 결과 표시
-            myResult?.let{ (name, score, correct) -> //myResult가 있을 시 실행
+            myResult?.let{ userInfo -> //myResult가 있을 시 실행
                 Text(
-                    text = "$name : $correct / $totalRound\n 점수: $score", //이동욱: 3 / 10, 밑에는 점수:150 으로 표현
+                    text = "${userInfo.userName} :/ $totalRound\n 점수: ${userInfo.score}", //이동욱: 3 / 10, 밑에는 점수:150 으로 표현
                     modifier = Modifier.padding(8.dp),
                     textAlign = TextAlign.Center
                 )
