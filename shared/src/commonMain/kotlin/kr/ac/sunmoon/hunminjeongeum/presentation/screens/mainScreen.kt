@@ -133,11 +133,14 @@ fun GameScreen(
     var input by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     val wordQuiz by connection!!.questionViewModel.messages.collectAsState()
-    val sortedPlayerList = connection!!.userInfoViewModel.messages.value.sortedByDescending { it.score } //내림차순 정렬로 큰 수가 위로 가게 정렬
+    val playerList by connection!!.userInfoViewModel.messages.collectAsState()
+    val timerValues by connection.timerViewModel.messages.collectAsState()
+    val currentTime = timerValues.firstOrNull()
+    val sortedPlayerList = playerList.sortedByDescending { it.score } //내림차순 정렬로 큰 수가 위로 가게 정렬
     val sharedChatList by connection!!.chatViewModel.messages.collectAsState()
     // ============================================================
     // //GameOver로직이 잘 작동되는지 확인하기 위한 더미 기믹 - 구현 시 삭제
-    var dummyGameOver by remember{mutableStateOf(false)}
+    var isGameOverDismissed by remember{mutableStateOf(false)}
     var timeLeft by remember { mutableStateOf(30) }
     // ============================================================
     val currentQuiz = wordQuiz.lastOrNull() ?: "문제 대기 중..."
@@ -174,7 +177,7 @@ fun GameScreen(
                     countRound = countRound
                 )
 
-                //TimerDisplay(connection = connection!!) // 시간 표시, 현재 더미용 timeLeft로 시간 확인 나중에 timer로 복구할것
+                TimerDisplay(connection = connection!!) // 시간 표시, 현재 더미용 timeLeft로 시간 확인 나중에 timer로 복구할것
 
                 WordDisplay( //문제 표시
                     modifier = Modifier
@@ -225,7 +228,7 @@ fun GameScreen(
             )
         } // 우측 끝
         //게임 오버레이
-        if(dummyGameOver){ //나중에 isGameOver로 변경해야함
+        if((connection.isGameOver || currentTime == 0) && !isGameOverDismissed){ //나중에 isGameOver로 변경해야함
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -236,7 +239,7 @@ fun GameScreen(
                     playerList = sortedPlayerList,
                     totalRound = totalRound,
                     myName = myName,
-                    onConfirm = {dummyGameOver = false }
+                    onConfirm = { isGameOverDismissed = true }
                 )
             }
         }
@@ -297,11 +300,14 @@ fun RoundDisplay(
 fun TimerDisplay(
     connection: ClientConnection,  // 더미, 로직 팀원이 전달
 ) {
+    val timerValues by connection.timerViewModel.messages.collectAsState()
+    val time = timerValues.firstOrNull() ?: 0
+
     Text(
-        text = "${connection.timerViewModel.messages.value[0]}초",
+        text = "${time}초",
         fontSize = 20.sp,
         fontWeight = FontWeight.Bold,
-        color = if (connection.timerViewModel.messages.value[0] < 5) Coral else DarkPurple,  // ← 5초 미만이면 Coral, 아니면 DarkPurple
+        color = if (time < 5) Coral else DarkPurple,  // ← 5초 미만이면 Coral, 아니면 DarkPurple
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),

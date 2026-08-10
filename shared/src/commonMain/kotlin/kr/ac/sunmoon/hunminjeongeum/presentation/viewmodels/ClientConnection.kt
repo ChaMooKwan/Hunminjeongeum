@@ -27,6 +27,8 @@ class ClientConnection(
     val timerViewModel = ViewModel<Int>()
     var isGameStarted by mutableStateOf(false)
         private set
+    var isGameOver by mutableStateOf(false)
+        private set
 
     // [1번 화면]의 닉네임, 아이피, 포트 입력하고 확인 눌렀을 때 호출한다.
     fun connect() {
@@ -52,6 +54,11 @@ class ClientConnection(
                 }
                 else if (received.contains("/playGame,")) {
                     isGameStarted = true
+                    isGameOver = false
+                }
+                else if (received.contains("/gameOver,")) {
+                    isGameStarted = false
+                    isGameOver = true
                 }
                 else if (received.contains("/question,")) {
                     updateQuestion(decodeQuestion(received))
