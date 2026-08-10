@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp //사용자 폰트 크기 설정에 반영
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.background // 오버레이 화면 띄우고, alpha를 사요해 게임 화면 창 원하는 정도로 흐릿하게 하기
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.text.TextStyle
@@ -42,12 +43,6 @@ fun mainScreen() {
     var isPortError by remember { mutableStateOf(false) } // 받아온 port를 Int형으로 치환 시 오류 발생 여부
     var isConnectError by remember { mutableStateOf(false) } // 서버 접속 실패 여부
     val serverGameStarted = connection?.isGameStarted == true
-
-    LaunchedEffect(serverGameStarted) {
-        if (serverGameStarted) {
-            isGameStart = true
-        }
-    }
 
     MaterialTheme(
         typography = Typography(  // ← 추가
@@ -71,7 +66,8 @@ fun mainScreen() {
             PrepareScreen( // 게임 시작 버튼 클릭 시 대기화면으로 이동
                 myName = myName,
                 connection = connection!!,
-                onGameStart = { isGameStart = true } //게임시작여부
+                onGameStart = { isGameStart = true }, //게임시작여부
+
             )
         } else {
             ProfileScreen( //작성 완료까지 기다리다가 완료되면 받아오기
@@ -94,11 +90,8 @@ fun mainScreen() {
                             connection?.connect()
                             isProfileDone = true  // ← 성공 시에만 이동
                         } catch (e: Exception) {
-                            /// 기존 코드 (서버 있을 때)
-                            // isConnectError = true
-                            // isProfileDone = false
-                            // 테스트용 더미 -> 서버 열리면 삭제
-                            isProfileDone = true  // 서버 없어도 다음 화면으로
+                            isConnectError = true
+                            isProfileDone = false
                         }
                     }
                 }
@@ -225,6 +218,7 @@ fun GameScreen(
                     .border(1.dp, Purple)
             )
         } // 우측 끝
+
         //게임 오버레이
         if((connection.isGameOver || currentTime == 0) && !isGameOverDismissed){ //나중에 isGameOver로 변경해야함
             Box(
@@ -244,7 +238,68 @@ fun GameScreen(
     }
 }
 
-    // =====================
+//prepareScreen에서 사용함 - 카테고리 선택
+@Composable
+fun CategorySelect(
+    onCategorySelect: (Int) -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(DarkPurple.copy(alpha  =1f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(0.6f)
+                .fillMaxHeight(0.7f),
+            shape = RectangleShape,
+            border = BorderStroke(1.dp, Purple),
+            colors = CardDefaults.cardColors(containerColor = White)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Text(
+                    text = "카테고리 선택",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkPurple
+                )
+                listOf(
+                    "과일" to 1,
+                    "국가" to 2,
+                    "요리" to 3,
+                    "동물" to 4,
+                    "사자성어" to 5
+                ).forEach { (name, number) ->
+                    Button(
+                        onClick = { onCategorySelect(number) },
+                        colors = ButtonDefaults.buttonColors(containerColor = Purple),
+                        shape = RectangleShape,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .padding(vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = name,
+                            color = White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// =====================
 // 플레이어 카드
 // 이름 + 점수 표시
 // =====================
