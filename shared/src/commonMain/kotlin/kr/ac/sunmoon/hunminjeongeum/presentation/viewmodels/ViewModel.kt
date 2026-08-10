@@ -33,4 +33,7 @@ class ViewModel<T>(): ViewModel() {
             scores
         }
     }
+    fun clearMessages() {
+        _messages.value = emptyList()
+    }
 }

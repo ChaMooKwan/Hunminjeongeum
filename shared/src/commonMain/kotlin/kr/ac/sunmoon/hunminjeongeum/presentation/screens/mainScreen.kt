@@ -66,6 +66,7 @@ fun mainScreen() {
             GameScreen(
                 myName = myName, //사용자명
                 connection = connection, //연결확인
+                onEndButtonClicked = {isGameStart = false}
             )
         } else if (isProfileDone) { //프로필 작성만 true일 시
             PrepareScreen( // 게임 시작 버튼 클릭 시 대기화면으로 이동
@@ -118,6 +119,7 @@ fun GameScreen(
     quizCategory: String = "동물", //더미, 문제 카테고리
     countRound: Int = 1, // 더미, 현재 판 수
     totalRound: Int = 5, // 더미, 총 판 수
+    onEndButtonClicked: () -> Unit,
     timer: Int = 30, // 더미, 실제 서버 시간에서 받아올 것
     isGameOver: Boolean = false, // 게임 종료 시 true
 
@@ -237,7 +239,12 @@ fun GameScreen(
                     playerList = sortedPlayerList,
                     totalRound = totalRound,
                     myName = myName,
-                    onConfirm = { isGameOverDismissed = true }
+                    onConfirm = {
+                        isGameOverDismissed = true
+                        onEndButtonClicked()
+                        connection.chatViewModel.clearMessages()
+
+                    }
                 )
             }
         }
