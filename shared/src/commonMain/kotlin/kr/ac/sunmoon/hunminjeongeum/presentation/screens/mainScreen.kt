@@ -43,6 +43,13 @@ fun mainScreen() {
     var connection by remember { mutableStateOf<ClientConnection?>(null) } //클라이언트와 서버간에 name, ip, port 상호작용
     var isPortError by remember { mutableStateOf(false) } // 받아온 port를 Int형으로 치환 시 오류 발생 여부
     var isConnectError by remember { mutableStateOf(false) } // 서버 접속 실패 여부
+    val serverGameStarted = connection?.isGameStarted == true
+
+    LaunchedEffect(serverGameStarted) {
+        if (serverGameStarted) {
+            isGameStart = true
+        }
+    }
 
     MaterialTheme(
         typography = Typography(  // ← 추가
@@ -125,7 +132,6 @@ fun GameScreen(
 ) {
     var input by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
-    val currentWord by connection!!.questionViewModel.messages.collectAsState()
     val wordQuiz by connection!!.questionViewModel.messages.collectAsState()
     val sortedPlayerList = connection!!.userInfoViewModel.messages.value.sortedByDescending { it.score } //내림차순 정렬로 큰 수가 위로 가게 정렬
     val sharedChatList by connection!!.chatViewModel.messages.collectAsState()
@@ -134,7 +140,7 @@ fun GameScreen(
     var dummyGameOver by remember{mutableStateOf(false)}
     var timeLeft by remember { mutableStateOf(30) }
     // ============================================================
-    val last:Int = wordQuiz.lastIndex
+    val currentQuiz = wordQuiz.lastOrNull() ?: "문제 대기 중..."
     //val wordCount = wordQuiz[last].length //단어 개수확인용
     //val hintState = quizSelector(wordCount, timeLeft) //값 집어넣기
     // ============================================================
@@ -174,7 +180,7 @@ fun GameScreen(
                     modifier = Modifier
                         .weight(3f)
                         .fillMaxWidth(),
-                    word = wordQuiz[last] //처음엔 초성, 그 후로는 초성힌트로 업데이트
+                    word = currentQuiz //처음엔 초성, 그 후로는 초성힌트로 업데이트
                 )
 
                 CategoryDisplay( //카테고리 표시
@@ -195,7 +201,17 @@ fun GameScreen(
 
                 WordInput( //입력창 표시
                     input = input,
-                    onInputChange = { input = it }
+                    onInputChange = {
+                        if (it.endsWith("\n")) {
+                            val message = it.trimEnd()
+                            if (message.isNotEmpty()) {
+                                connection.sendChat(message)
+                            }
+                            input = ""
+                        } else {
+                            input = it
+                        }
+                    }
                 )
             } // 중앙 끝
             // 우측 - 채팅 목록

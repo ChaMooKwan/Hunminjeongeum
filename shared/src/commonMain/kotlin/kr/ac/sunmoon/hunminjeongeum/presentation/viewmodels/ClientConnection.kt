@@ -1,5 +1,8 @@
 package kr.ac.sunmoon
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import java.io.PrintWriter
 import java.net.Socket
 import java.io.BufferedReader
@@ -22,7 +25,8 @@ class ClientConnection(
     val questionViewModel = ViewModel<String>() // 마지막 배열 값만 정답 화면에 출력해야 함. .last사용해서
     val userInfoViewModel = ViewModel<UserInfo>()
     val timerViewModel = ViewModel<Int>()
-    var isGameStarted = false
+    var isGameStarted by mutableStateOf(false)
+        private set
 
     // [1번 화면]의 닉네임, 아이피, 포트 입력하고 확인 눌렀을 때 호출한다.
     fun connect() {
@@ -36,7 +40,7 @@ class ClientConnection(
         thread(isDaemon = true) {
             enterWaitingRoom()
             while (true){
-                val received: String = reader.readLine()
+                val received: String = reader.readLine() ?: break
 
                 if (received.contains("/userNames,")) {
                     println(received)
@@ -74,7 +78,7 @@ class ClientConnection(
         return userNames
     }
     private fun updateUserNames(userNames: List<String>){
-        userInfoViewModel.update(UserInfo(userName,0))
+        userInfoViewModel.updateScore(userNames.map { UserInfo(it,0) })
     }
     private fun decodeChat(received: String): ChatMessage {
         val list: List<String> = received.split(",")

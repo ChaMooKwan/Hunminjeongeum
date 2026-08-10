@@ -220,7 +220,6 @@ fun PrepareScreen(
                     } else {
                         try {
                             connection.startGame() // 서버에 게임 시작 신호 전송
-                            onGameStart()
                         } catch (e: Exception) {
                             onGameStart() // 전송 실패해도 이동
                         }
