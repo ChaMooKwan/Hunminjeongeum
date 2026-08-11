@@ -109,7 +109,7 @@ fun mainScreen() {
 fun GameScreen(
     myName:String = "이동욱", //더미, 사용자명
     connection: ClientConnection ?= null, //서버 불러오기
-    quizCategory: String = "동물", //더미, 문제 카테고리
+    quizCategory: String = "", //더미, 문제 카테고리
     countRound: Int = 1, // 더미, 현재 판 수
     totalRound: Int = 5, // 더미, 총 판 수
     onEndButtonClicked: () -> Unit,
@@ -205,9 +205,7 @@ fun GameScreen(
                     modifier = Modifier
                         .weight(1.5f)
                         .fillMaxWidth(),
-//                    easyHint   = if (hintState["easyHint"]   == true) easyHint   else "",
-//                    normalHint = if (hintState["normalHint"] == true) normalHint else "",
-//                    hardHint   = if (hintState["hardHint"]   == true) hardHint   else ""
+                    connection = connection,
                 )
 
                 WordInput( //입력창 표시
@@ -454,10 +452,12 @@ fun CategoryDisplay(
 @Composable
 fun HintDisplay(
     modifier: Modifier = Modifier,
+    connection: ClientConnection,
     easyHint: String = "", // 기본값 빈 문자열
     normalHint: String = "",
     hardHint: String = ""
 ) {
+    val hints by connection.hintViewModel.messages.collectAsState()
     Column(modifier = modifier){ //힌트칸 3개
         Card(
             colors = CardDefaults.cardColors(
@@ -474,7 +474,7 @@ fun HintDisplay(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = easyHint, // 받아온 힌트 표시
+                    text = if (hints.size > 0) {hints[0]} else "", // 받아온 힌트 표시
                     modifier = Modifier.padding(8.dp)
                 )
             }
@@ -494,7 +494,7 @@ fun HintDisplay(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = normalHint, // 받아온 힌트 표시
+                    text =  if (hints.size > 1) {hints[1]} else "", // 받아온 힌트 표시 normal
                     modifier = Modifier.padding(8.dp)
                 )
             }
@@ -514,7 +514,7 @@ fun HintDisplay(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = hardHint, // 받아온 힌트 표시
+                    text = if (hints.size > 2) {hints[2]} else "",  // 받아온 힌트 표시
                     modifier = Modifier.padding(8.dp)
                 )
             }
@@ -618,7 +618,7 @@ fun GameOver(
             // 플레이어별 결과 표시
             myResult?.let{ userInfo -> //myResult가 있을 시 실행
                 Text(
-                    text = "${userInfo.userName} /$totalRound\n 점수: ${userInfo.score}", //이동욱: 3 / 10, 밑에는 점수:150 으로 표현
+                    text = "${userInfo.userName} 점수: ${userInfo.score}", //이동욱 점수:150 으로 표현
                     modifier = Modifier.padding(8.dp),
                     textAlign = TextAlign.Center
                 )

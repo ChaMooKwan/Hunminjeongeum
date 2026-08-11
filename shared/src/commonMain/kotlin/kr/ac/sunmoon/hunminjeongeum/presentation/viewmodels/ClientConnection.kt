@@ -25,6 +25,7 @@ class ClientConnection(
     val questionViewModel = ViewModel<String>() // 마지막 배열 값만 정답 화면에 출력해야 함. .last사용해서
     val userInfoViewModel = ViewModel<UserInfo>()
     val timerViewModel = ViewModel<Int>()
+    val hintViewModel = ViewModel<String>()
     var isGameStarted by mutableStateOf(false)
         private set
     var isGameOver by mutableStateOf(false)
@@ -53,6 +54,7 @@ class ClientConnection(
                     println(received)
                 }
                 else if (received.contains("/playGame,")) {
+                    println("playGame!!")
                     isGameStarted = true
                     isGameOver = false
                 }
@@ -62,12 +64,16 @@ class ClientConnection(
                 }
                 else if (received.contains("/question,")) {
                     updateQuestion(decodeQuestion(received))
+                    hintViewModel.clearMessages()
                 }
                 else if (received.contains("/score,")){
                     updateScore(decodeScore(received))
                 }
                 else if (received.contains("/timer,")) {
                     updateTimer(decodeTimer(received))
+                }
+                else if (received.contains("/hint^")) {
+                    updateHint(received)
                 }
             }
         }
@@ -76,6 +82,10 @@ class ClientConnection(
         writer.println(userName)
     }
 
+    private fun updateHint(received: String){
+        val list: List<String> = received.split("^")
+        hintViewModel.update(list[2])
+    }
     private fun decodeUserNames(received: String): List<String>{
         val list: List<String> = received.split(",")
         val userNames = mutableListOf<String>()
@@ -133,12 +143,8 @@ class ClientConnection(
     }
 
     // [2번 대기자 창]에서 게임 시작 버튼 누르면 onClick ={ a.startGame() }에서 호출
-    fun startGame() {
-        writer.println("/startGame")
-    }
-
-    fun sendCategory(category: Int) {
-        writer.println("/category,$category")
+    fun startGame(category: Int) {
+        writer.println("/startGame,${category}")
     }
 
     // [3번 게임 창]에서 확인 버튼 누르면 호출하면 된다.

@@ -242,9 +242,10 @@ fun PrepareScreen(
             }
             if (showCategoryOverlay) {
                 CategorySelect(
-                    onCategorySelect = { number ->
-                        connection.sendCategory(number) // 카테고리 전송
-                        connection.startGame() // 게임 시작 신호
+                    onCategorySelect = { number -> // 카테고리 전송
+                        println("helloooooooooooooooooooooo")
+                        connection.startGame(number) // 게임 시작 신호
+                        println("hello")
                     }
                 )
             }
