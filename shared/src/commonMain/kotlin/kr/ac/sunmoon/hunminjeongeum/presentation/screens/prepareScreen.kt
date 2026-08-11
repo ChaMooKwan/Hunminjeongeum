@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun PrepareScreen(
@@ -33,6 +34,7 @@ fun PrepareScreen(
     var input by remember { mutableStateOf("") } //메시지 입력값
     val listState = rememberLazyListState() //스크롤 상태 관리
     var showCategoryOverlay by remember { mutableStateOf(false) }  // 카테고리 저장용
+    var isLoading by remember { mutableStateOf(false) } //카테고리 입력 시 로딩 처리
 
     //StarReceiver 호출
     LaunchedEffect(Unit) {
@@ -243,10 +245,27 @@ fun PrepareScreen(
             if (showCategoryOverlay) {
                 CategorySelect(
                     onCategorySelect = { number ->
-                        connection.sendCategory(number) // 카테고리 전송
-                        connection.startGame() // 게임 시작 신호
+                        connection.startGame(number) // 게임 시작 신호
+                        isLoading = true //로딩 시작
+                        showCategoryOverlay = false //오버레이 닫기
                     }
                 )
+            }
+            //로딩 표시(이유: AI에게 힌트 생성하라고 하고 받아오는데 시간이 걸리기 때문
+            if(isLoading){
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(DarkPurple.copy(alpha = 1f)),
+                    contentAlignment = Alignment.Center
+                ){
+                    Text(
+                        text = "로딩 중...",
+                        color = White,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }

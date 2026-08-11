@@ -26,6 +26,7 @@ class ClientConnection(
     val userInfoViewModel = ViewModel<UserInfo>()
     val timerViewModel = ViewModel<Int>()
     val hintViewModel = ViewModel<String>()
+    val subjectViewModel = ViewModel<String>()
     var isGameStarted by mutableStateOf(false)
         private set
     var isGameOver by mutableStateOf(false)
@@ -55,10 +56,12 @@ class ClientConnection(
                 }
                 else if (received.contains("/playGame,")) {
                     println("playGame!!")
+                    updateSubject(received)
                     isGameStarted = true
                     isGameOver = false
                 }
                 else if (received.contains("/gameOver,")) {
+                    subjectViewModel.clearMessages()
                     isGameStarted = false
                     isGameOver = true
                 }
@@ -80,6 +83,11 @@ class ClientConnection(
     }
     private fun enterWaitingRoom() {
         writer.println(userName)
+    }
+    private fun updateSubject(received: String){
+        val list = received.split(",")
+        val subject = listOf<String>("과일","국가","요리","동물","사자성어")
+        subjectViewModel.update(subject[list[1].toInt()-1])
     }
 
     private fun updateHint(received: String){

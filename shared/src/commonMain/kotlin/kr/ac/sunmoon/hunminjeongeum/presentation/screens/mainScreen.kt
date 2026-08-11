@@ -212,7 +212,7 @@ fun GameScreen(
                     modifier = Modifier
                         .weight(0.6f)
                         .fillMaxWidth(),
-                    quizCategory = quizCategory
+                    quizCategory = connection.subjectViewModel.messages.value[0]
                 )
 
                 HintDisplay( //힌트 표시
