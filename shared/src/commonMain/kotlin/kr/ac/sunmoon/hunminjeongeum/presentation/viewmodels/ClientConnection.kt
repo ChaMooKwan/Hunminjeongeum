@@ -160,10 +160,7 @@ class ClientConnection(
 
     // [3번 게임 창]에서 확인 버튼 누르면 호출하면 된다.
     fun sendChat(message: String) {
-        println("print plz")
         val sendingMessage = "/chat,$userName&$message"
-        print("plzzzzzzzzz")
         writer.println(sendingMessage)
-        print("yes!")
     }
 }
