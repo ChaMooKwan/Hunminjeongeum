@@ -1,5 +1,6 @@
 package kr.ac.sunmoon
 
+//커밋용 임시 주석
 //UI 기본 요소
 import androidx.compose.foundation.BorderStroke //BorderStroke(1.dp(굵기), Color.gray(색감))를 이용하여 Card 테두리 표시
 import androidx.compose.foundation.border //Column, Row등의 테두리 표시
