@@ -130,6 +130,10 @@ fun GameScreen(
     val timerValues by connection.timerViewModel.messages.collectAsState()
     val currentTime = timerValues.firstOrNull()
     val sortedPlayerList = playerList.sortedByDescending { it.score } //내림차순 정렬로 큰 수가 위로 가게 정렬
+    //정답 시 노래 추가를 위한 변수
+    val myScore = connection!!.userInfoViewModel.messages.value
+        .find { it.userName == myName }?.score ?: 0
+    val prevScore = remember { mutableStateOf(0) }
     val chatMessages by connection!!.chatViewModel.messages.collectAsState()
     // ============================================================
     // //GameOver로직이 잘 작동되는지 확인하기 위한 더미 기믹 - 구현 시 삭제
@@ -140,6 +144,17 @@ fun GameScreen(
     //val wordCount = wordQuiz[last].length //단어 개수확인용
     //val hintState = quizSelector(wordCount, timeLeft) //값 집어넣기
     // ============================================================
+
+    LaunchedEffect(Unit) {  // 게임 노래
+        SoundManager.playGameStart()
+    }
+
+    LaunchedEffect(myScore) { //정답 효과음
+        if (myScore > prevScore.value) {
+            SoundManager.playCorrect()
+            prevScore.value = myScore
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Row(

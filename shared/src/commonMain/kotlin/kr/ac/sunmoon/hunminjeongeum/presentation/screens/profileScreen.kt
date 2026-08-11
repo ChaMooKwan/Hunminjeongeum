@@ -21,6 +21,10 @@ fun ProfileScreen(
     var ipAddress by remember { mutableStateOf("")} // ip 입력
     var isError by remember { mutableStateOf(false) }  // 빈 칸 체크용
 
+    LaunchedEffect(Unit) {  //프로필 음악
+        SoundManager.playLogin()
+    }
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,

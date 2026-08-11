@@ -36,6 +36,7 @@ fun PrepareScreen(
 
     //StarReceiver 호출
     LaunchedEffect(Unit) {
+        SoundManager.playPrepareRoom() //대기방 음악
         if (connection != null) { //서버 연결되어 있을 때만 실행
             try {
                 connection.startReceiver() //백그라운드에서 메시지 수신 시작
