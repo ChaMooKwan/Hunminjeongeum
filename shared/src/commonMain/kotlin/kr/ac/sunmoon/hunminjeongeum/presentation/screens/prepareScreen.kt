@@ -96,7 +96,6 @@ fun PrepareScreen(
                             Text(
                                 // 사용자 입장 시 이름 표시, 없으면 대기중 표시
                                 text = if (i < playerList.size) {
-                                    println("${playerList[i]}")
                                     playerList[i].userName
                                 } else "대기중...",
                                 color = if (i < playerList.size) Color.Black else Color.Gray,

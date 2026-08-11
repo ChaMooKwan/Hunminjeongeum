@@ -212,7 +212,7 @@ fun GameScreen(
                     modifier = Modifier
                         .weight(0.6f)
                         .fillMaxWidth(),
-                    quizCategory = connection.subjectViewModel.messages.value[0]
+                    connection = connection
                 )
 
                 HintDisplay( //힌트 표시
@@ -440,9 +440,10 @@ fun WordDisplay(
 // ========================
 @Composable
 fun CategoryDisplay(
-    quizCategory:String,
+    connection: ClientConnection,
     modifier: Modifier = Modifier
 ){
+    val quizCategory by connection.subjectViewModel.messages.collectAsState()
     Card(
         colors = CardDefaults.cardColors(
             containerColor = White
