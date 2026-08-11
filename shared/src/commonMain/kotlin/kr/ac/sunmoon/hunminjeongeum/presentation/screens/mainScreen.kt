@@ -27,6 +27,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.material3.Typography
+import kotlinx.coroutines.delay
 import kotlin.String
 
 //전체적인 색상변경 및 디자인 변경이 필요함
@@ -94,7 +95,7 @@ fun mainScreen() {
                             isProfileDone = false
                         }
                     }
-                }
+                },
             )
         }
     }
@@ -142,6 +143,7 @@ fun GameScreen(
     //val wordCount = wordQuiz[last].length //단어 개수확인용
     //val hintState = quizSelector(wordCount, timeLeft) //값 집어넣기
     // ============================================================
+    var isCorrect by remember { mutableStateOf(false)}
 
     LaunchedEffect(Unit) {  // 게임 노래
         SoundManager.playGameStart()
@@ -149,8 +151,13 @@ fun GameScreen(
 
     LaunchedEffect(myScore) { //정답 효과음
         if (myScore > prevScore.value) {
+            //prevScore안에 현재 점수 담기
             SoundManager.playCorrect()
             prevScore.value = myScore
+            isCorrect = true
+            //2초간
+            delay(2000L)
+            isCorrect = false
         }
     }
 
@@ -158,6 +165,7 @@ fun GameScreen(
         Row(
             modifier = Modifier
                 .fillMaxSize()
+                //정답이 맞으면 노랑색으로 변경
                 .background(LightPurple)
         ) {
             // 좌측 - 플레이어 목록
@@ -189,7 +197,8 @@ fun GameScreen(
                     modifier = Modifier
                         .weight(3f)
                         .fillMaxWidth(),
-                    word = currentQuiz //처음엔 초성, 그 후로는 초성힌트로 업데이트
+                    word = currentQuiz, //처음엔 초성, 그 후로는 초성힌트로 업데이트
+                    isCorrect = isCorrect
                 )
 
                 CategoryDisplay( //카테고리 표시
@@ -390,12 +399,13 @@ fun TimerDisplay(
 @Composable
 fun WordDisplay(
     modifier: Modifier = Modifier,
-    word: String
+    word: String,
+    isCorrect: Boolean = false
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = White  // ← 흰색 배경
+            containerColor = if(isCorrect) Yellow else White  // ← 흰색 배경
         ),
         border = BorderStroke(1.dp, Color.Black),
         shape = RectangleShape
@@ -548,9 +558,16 @@ fun ChatList(
     myName: String,
     modifier: Modifier = Modifier
 ) {
+    val listState = rememberLazyListState()
+    // 새 메시지 올 때마다 맨 아래로 스크롤
+    LaunchedEffect(chatMessages.size) {
+        if (chatMessages.isNotEmpty()) {
+            listState.animateScrollToItem(chatMessages.size - 1)
+        }
+    }
     LazyColumn(
         modifier = modifier,
-        reverseLayout = true //최신 정보가 아래로 향하게
+        state = listState
     ) {
         items(chatMessages) { chatMessage -> //채팅메시지를 아래에 표시
             Row(

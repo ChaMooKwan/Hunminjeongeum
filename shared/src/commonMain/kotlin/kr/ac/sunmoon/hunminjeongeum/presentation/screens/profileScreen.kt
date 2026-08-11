@@ -9,24 +9,45 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.*
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
 
 @Composable
 fun ProfileScreen(
-    isPortError:Boolean = false, //포트가 제대로 들어갔는지 확인
-    isConnectError:Boolean = false,
-    onConfirm: (String, String, String) -> Unit  // 이름 입력 후 GameScreen으로 이동
+    isPortError: Boolean = false, //포트가 제대로 들어갔는지 확인
+    isConnectError: Boolean = false,
+    onConfirm: (String, String, String) -> Unit,  // 이름 입력 후 GameScreen으로 이동
 ) {
     var myName by remember { mutableStateOf("") } //닉네임 입력
     var portNumber by remember { mutableStateOf("")} //포트번호 입력
     var ipAddress by remember { mutableStateOf("")} // ip 입력
     var isError by remember { mutableStateOf(false) }  // 빈 칸 체크용
+    val focusManager = LocalFocusManager.current //탭 입력 시 원하는 칸으로 이동
 
     LaunchedEffect(Unit) {  //프로필 음악
         SoundManager.playLogin()
     }
 
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .onPreviewKeyEvent{keyEvent -> //onKeyEvent는 compose가 tab키를 먼저 감지하나 onPreviewKeyEvent는 compose가 잡기 전에 실행
+                if (keyEvent.key == Key.Tab &&
+                    keyEvent.type == KeyEventType.KeyDown) {
+                    focusManager.moveFocus(FocusDirection.Down)
+                    true
+                } else {
+                    false
+                }
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
