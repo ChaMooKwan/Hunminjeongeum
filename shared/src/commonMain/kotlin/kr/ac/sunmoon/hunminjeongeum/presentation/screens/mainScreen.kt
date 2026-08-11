@@ -1,34 +1,38 @@
 package kr.ac.sunmoon
 
+//UI 기본 요소
 import androidx.compose.foundation.BorderStroke //BorderStroke(1.dp(굵기), Color.gray(색감))를 이용하여 Card 테두리 표시
 import androidx.compose.foundation.border //Column, Row등의 테두리 표시
 import androidx.compose.foundation.layout.* // fillMaxSize, padding, weight 등 레이아웃 관련 설정
 import androidx.compose.foundation.lazy.LazyColumn //채팅 목록용 스크롤
 import androidx.compose.foundation.lazy.items //리스트를 LazyColumn에 담기 위함
+import androidx.compose.foundation.lazy.rememberLazyListState //LazyColumn의 스크롤을 관리
+import androidx.compose.foundation.layout.Box //Box에서 Alignment.Center 와 같이 정렬
+import androidx.compose.foundation.background //오버레이 화면 띄우고, alpha를 사요해 게임 화면 창 원하는 정도로 흐릿하게 하기
+//구글 디자인 UI 컴포넌트
 import androidx.compose.material3.Card //modifier, border, shape 등의 카드 형태 UI
 import androidx.compose.material3.OutlinedTextField //value, onValueChange, placeholder와 같이 다른 값으로 들어오는 값 처리
 import androidx.compose.material3.Text //color, fontSize 등 텍스트 표시
-import androidx.compose.runtime.* //remember, mutableStateOf와 같이 리스트나 값이 바뀌거나 추가되면 자동 갱신
+import androidx.compose.material3.ButtonDefaults //버튼 색상 및 스타일 설정
+import androidx.compose.material3.CardDefaults //카드 색상 및 스타일 설정
+import androidx.compose.material3.MaterialTheme //맵 전체 테마 설정
+import androidx.compose.material3.Typography //MaterialTheme에 적용할 폰트 스타일 모음
+import androidx.compose.material3.Button //Button(onClik)과 같이 버튼 생성 및 클릭 시 호환 로직
+import androidx.compose.material3.OutlinedTextFieldDefaults //focused, unfocused로 입력창을 클릭 시/평소 테두리 설정
+//UI 속성 값
 import androidx.compose.ui.Modifier //fillMaxWidth와 같은 크기, 여백, 테두리 설정
 import androidx.compose.ui.graphics.Color //모든 색상 설정에 사용
 import androidx.compose.ui.unit.dp //화면 해상도가 달라져도 일정한 크기 유지
 import androidx.compose.ui.graphics.RectangleShape //자동으로 둥글기 설정된 거 사각형으로 수정
-import androidx.compose.foundation.layout.Box //Box에서 Alignment.Center 와 같이 정렬
-import androidx.compose.material3.Button //Button(onClik)과 같이 버튼 생성 및 클릭 시 호환 로직
-import androidx.compose.material3.OutlinedTextFieldDefaults //focused, unfocused로 입력창을 클릭 시/평소 테두리 설정
+import androidx.compose.ui.text.TextStyle //폰트, 크기, 굵기 등 텍스트 스타읾 모음
 import androidx.compose.ui.Alignment //Box, Column, Row 등 정렬 방향 설정
 import androidx.compose.ui.text.font.FontWeight //FontWeight.Bold,Normal 등 텍스트 굵기 설정
 import androidx.compose.ui.unit.sp //사용자 폰트 크기 설정에 반영
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.foundation.background // 오버레이 화면 띄우고, alpha를 사요해 게임 화면 창 원하는 정도로 흐릿하게 하기
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.material3.Typography
-import kotlinx.coroutines.delay
-import kotlin.String
+//Compose 상태 관리
+import androidx.compose.runtime.* //remember, mutableStateOf와 같이 리스트나 값이 바뀌거나 추가되면 자동 갱신
+//비동기 처리
+import kotlinx.coroutines.delay //코틀린 일정시간 대기 시 사용
 
 //전체적인 색상변경 및 디자인 변경이 필요함
 @Composable
@@ -361,7 +365,7 @@ fun RoundDisplay(
 ) {
     Text(
         color = DarkPurple,
-        text = "${countRound}라운드",
+        text = "${countRound}라운드 / 5라운드",
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),

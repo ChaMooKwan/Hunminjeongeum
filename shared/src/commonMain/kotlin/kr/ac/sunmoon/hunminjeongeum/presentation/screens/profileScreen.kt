@@ -10,11 +10,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.focus.FocusDirection
@@ -24,7 +21,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 fun ProfileScreen(
     isPortError: Boolean = false, //포트가 제대로 들어갔는지 확인
     isConnectError: Boolean = false,
-    onConfirm: (String, String, String) -> Unit,  // 이름 입력 후 GameScreen으로 이동
+    onConfirm: (String, String, String) -> Unit,  //이름 입력 후 GameScreen으로 이동
 ) {
     var myName by remember { mutableStateOf("") } //닉네임 입력
     var portNumber by remember { mutableStateOf("")} //포트번호 입력
@@ -51,7 +48,8 @@ fun ProfileScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text( //닉네임 처리
+        //닉네임 처리
+        Text(
             text = "닉네임을 입력하세요",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
@@ -75,7 +73,8 @@ fun ProfileScreen(
             ),
             modifier = Modifier.padding(16.dp)
         )
-        Text( //포트번호 처리
+        //포트번호 처리
+        Text(
             text = "포트번호를 입력하세요",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
@@ -105,7 +104,8 @@ fun ProfileScreen(
                 modifier = Modifier.padding(4.dp)
             )
         }
-        Text( //IP 처리
+        //IP 처리
+        Text(
             text = "IP를 입력하세요",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
@@ -136,6 +136,7 @@ fun ProfileScreen(
                 modifier = Modifier.padding(4.dp)
             )
         }
+        //올바르지 않은 값일 경우 에러 문구
         if (isConnectError) {
             Text(
                 text = "서버 접속 실패: IP와 포트를 확인해주세요",
@@ -143,6 +144,7 @@ fun ProfileScreen(
                 modifier = Modifier.padding(4.dp)
             )
         }
+        //변수 삽입
         Button(
             onClick = {
                 val trimName = myName.trim()

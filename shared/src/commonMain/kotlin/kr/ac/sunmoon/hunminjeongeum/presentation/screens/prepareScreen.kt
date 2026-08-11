@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun PrepareScreen(
     myName: String, //현재 사용자 이름
-    connection: ClientConnection,
+    connection: ClientConnection, //서버 연결
     leftPlayer: Int = 4, //좌측 사용자수
     rightPlayer: Int = 3, //우측 사용자수
     onGameStart: () -> Unit //게임 시작 신호
@@ -67,7 +67,7 @@ fun PrepareScreen(
                 .fillMaxSize()
                 .background(LightPurple) //백그라운드 색상
         ) {
-            // 좌측 - 플레이어 목록 1~4번
+            //좌측 - 플레이어 목록 1~4번
             Column(
                 modifier = Modifier
                     .weight(0.2f) //가로 20% 차지
@@ -107,7 +107,7 @@ fun PrepareScreen(
                 }
             }
 
-            // 중앙 - 채팅창 (가로 60% 차지)
+            //중앙 - 채팅창 (가로 60% 차지)
             Column(
                 modifier = Modifier
                     .weight(0.6f)
@@ -153,7 +153,7 @@ fun PrepareScreen(
                     }
                 }
 
-                // 채팅 입력창 (엔터로 전송)
+                //채팅 입력창 (엔터로 전송)
                 OutlinedTextField(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Purple,      // 클릭 시 보라
@@ -187,7 +187,7 @@ fun PrepareScreen(
                 )
             }
 
-            // 우측 - 플레이어 목록 + 게임시작 버튼 (가로 20% 차지)
+            //우측 - 플레이어 목록 + 게임시작 버튼 (가로 20% 차지)
             Column(
                 modifier = Modifier
                     .weight(0.2f)
@@ -242,6 +242,7 @@ fun PrepareScreen(
                     )
                 }
             }
+            //카테고리 선택창 표시
             if (showCategoryOverlay) {
                 CategorySelect(
                     onCategorySelect = { number ->
@@ -252,6 +253,7 @@ fun PrepareScreen(
                     }
                 )
             }
+            //로딩 표시(이유: AI에게 힌트 생성하라고 하고 받아오는데 시간이 걸리기 때문
             if(isLoading){
                 Box(
                     modifier = Modifier
