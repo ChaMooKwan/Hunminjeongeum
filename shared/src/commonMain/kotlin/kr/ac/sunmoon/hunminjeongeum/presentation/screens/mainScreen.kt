@@ -195,7 +195,7 @@ fun GameScreen(
                     .border(1.dp, Purple)
             ) {
                 RoundDisplay( //라운드 표시
-                    countRound = countRound
+                    countRound = connection.currentRound
                 )
 
                 TimerDisplay(connection = connection!!) // 시간 표시, 현재 더미용 timeLeft로 시간 확인 나중에 timer로 복구할것

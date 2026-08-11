@@ -31,6 +31,7 @@ class ClientConnection(
         private set
     var isGameOver by mutableStateOf(false)
         private set
+    var currentRound = 0
 
     // [1번 화면]의 닉네임, 아이피, 포트 입력하고 확인 눌렀을 때 호출한다.
     fun connect() {
@@ -64,10 +65,12 @@ class ClientConnection(
                     subjectViewModel.clearMessages()
                     isGameStarted = false
                     isGameOver = true
+                    currentRound = 0
                 }
                 else if (received.contains("/question,")) {
                     updateQuestion(decodeQuestion(received))
                     hintViewModel.clearMessages()
+                    currentRound++
                 }
                 else if (received.contains("/score,")){
                     updateScore(decodeScore(received))
