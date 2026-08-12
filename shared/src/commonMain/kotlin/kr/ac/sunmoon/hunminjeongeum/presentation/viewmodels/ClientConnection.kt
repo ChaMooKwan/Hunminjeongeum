@@ -63,6 +63,7 @@ class ClientConnection(
                 }
                 else if (received.contains("/gameOver,")) {
                     subjectViewModel.clearMessages()
+                    hintViewModel.clearMessages()
                     isGameStarted = false
                     isGameOver = true
                     currentRound = 0
