@@ -89,15 +89,17 @@ fun PrepareScreen(
                         ),
                         shape = RectangleShape
                     ) {
-                        Box(
+                        BoxWithConstraints(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
+                            val fontSize = (maxHeight.value * 0.3f).sp
                             Text(
                                 // 사용자 입장 시 이름 표시, 없으면 대기중 표시
                                 text = if (i < playerList.size) {
                                     playerList[i].userName
                                 } else "대기중...",
+                                fontSize = fontSize,
                                 color = if (i < playerList.size) Color.Black else Color.Gray,
                                 modifier = Modifier.padding(8.dp)
                             )
@@ -114,39 +116,46 @@ fun PrepareScreen(
                     .border(1.dp, Purple) //테두리 보라색
             ) {
                 // 채팅 목록
-                LazyColumn(
+                BoxWithConstraints(
                     modifier = Modifier
-                        .weight(1f) //입력창 제외한 나머지 공간 차지
-                        .fillMaxWidth(),
-                    state = listState //스크롤 상태
+                        .weight(1f)
+                        .fillMaxWidth()
                 ) {
-                    items(chatList) { chatMessage -> //서버 연동 시 sharedChatList로 교체
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(4.dp),
-                            horizontalArrangement = if (chatMessage.userName == myName) //mainScreen에서 표시한 더미데이터
-                                Arrangement.End    // 내 메시지 오른쪽
-                            else
-                                Arrangement.Start  // 상대 메시지 왼쪽
-                        ) {
-                            Card(
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (chatMessage.userName == myName) //서버 연동 시 myName으로 교체
-                                        LightPurple  // 내 메시지 연보라
-                                    else
-                                        White        // 상대 메시지 흰색
-                                ),
-                                border = BorderStroke(
-                                    1.dp,
-                                    if (chatMessage.userName == myName) Purple else Gray //서버 연동 시 myName으로 교체
-                                )
+                    val fontSize = (maxHeight.value * 0.03f).sp
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        state = listState //스크롤 상태
+                    ) {
+                        items(chatList) { chatMessage -> //서버 연동 시 sharedChatList로 교체
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(4.dp),
+                                horizontalArrangement = if (chatMessage.userName == myName) //mainScreen에서 표시한 더미데이터
+                                    Arrangement.End    // 내 메시지 오른쪽
+                                else
+                                    Arrangement.Start  // 상대 메시지 왼쪽
                             ) {
-                                Text(
-                                    text = "${chatMessage.userName}: ${chatMessage.message}",
-                                    color = DarkPurple, // 텍스트 다크보라
-                                    modifier = Modifier.padding(8.dp)
-                                )
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (chatMessage.userName == myName) //서버 연동 시 myName으로 교체
+                                            LightPurple  // 내 메시지 연보라
+                                        else
+                                            White        // 상대 메시지 흰색
+                                    ),
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (chatMessage.userName == myName) Purple else Gray //서버 연동 시 myName으로 교체
+                                    )
+                                ) {
+                                    Text(
+                                        text = "${chatMessage.userName}: ${chatMessage.message}",
+                                        fontSize = fontSize,
+                                        color = DarkPurple, // 텍스트 다크보라
+                                        modifier = Modifier.padding(8.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -186,14 +195,14 @@ fun PrepareScreen(
                 )
             }
 
-            // 우측 - 플레이어 목록 + 게임시작 버튼 (가로 20% 차지)
+            // 우측 - 플레이어 목록 + 게임시작 버튼
             Column(
                 modifier = Modifier
                     .weight(0.2f)
                     .fillMaxHeight()
                     .border(1.dp, Color.Black)
             ) {
-                for (i in leftPlayer until (leftPlayer + rightPlayer)) { //rightPlayer 칸 배정
+                for (i in leftPlayer until (leftPlayer + rightPlayer)) {
                     Card(
                         modifier = Modifier
                             .weight(1f)
@@ -208,37 +217,41 @@ fun PrepareScreen(
                         ),
                         shape = RectangleShape
                     ) {
-                        Box(
+                        BoxWithConstraints(  // ← Box → BoxWithConstraints
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
+                            val fontSize = (maxHeight.value * 0.3f).sp  // ← 추가
                             Text(
                                 text = if (i < playerList.size) playerList[i].userName else "대기중...",
+                                fontSize = fontSize,  // ← 추가
                                 color = if (i < playerList.size) Color.Black else Color.Gray,
                                 modifier = Modifier.padding(8.dp)
                             )
                         }
                     }
                 }
-
-                Button(
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Coral // 코랄 색상
-                    ),
-                    onClick = { // 카테고리 오버레이 표시
-                        showCategoryOverlay = true
-                    },
+                // 게임 시작 버튼
+                BoxWithConstraints(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .padding(4.dp),
-                    shape = RectangleShape
+                        .padding(2.dp)
                 ) {
-                    Text(
-                        text = "게임 시작",
-                        color = White,
-                        fontWeight = FontWeight.Bold
-                    )
+                    val fontSize = (maxHeight.value * 0.2f).sp
+                    Button(
+                        colors = ButtonDefaults.buttonColors(containerColor = Coral),
+                        onClick = { showCategoryOverlay = true },
+                        modifier = Modifier.fillMaxSize(),
+                        shape = RectangleShape
+                    ) {
+                        Text(
+                            text = "게임 시작",
+                            color = White,
+                            fontSize = fontSize,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
             if (showCategoryOverlay) {
@@ -251,19 +264,22 @@ fun PrepareScreen(
                 )
             }
             //로딩 표시(이유: AI에게 힌트 생성하라고 하고 받아오는데 시간이 걸리기 때문
-            if(isLoading){
+            if (isLoading) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(DarkPurple.copy(alpha = 1f)),
                     contentAlignment = Alignment.Center
-                ){
-                    Text(
-                        text = "로딩 중...",
-                        color = White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                ) {
+                    BoxWithConstraints {
+                        val fontSize = (maxHeight.value * 0.05f).sp
+                        Text(
+                            text = "로딩 중...",
+                            color = White,
+                            fontSize = fontSize,  // ← 동적 크기
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

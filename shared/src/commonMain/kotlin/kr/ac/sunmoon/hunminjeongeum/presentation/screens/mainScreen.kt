@@ -144,8 +144,6 @@ fun GameScreen(
     // ============================================================
     // //GameOver로직이 잘 작동되는지 확인하기 위한 더미 기믹 - 구현 시 삭제
     var isGameOverDismissed by remember{mutableStateOf(false)}
-    var timeLeft by remember { mutableStateOf(30) }
-    // ============================================================
     val currentQuiz = wordQuiz.lastOrNull() ?: "문제 대기 중..."
     //val wordCount = wordQuiz[last].length //단어 개수확인용
     //val hintState = quizSelector(wordCount, timeLeft) //값 집어넣기
@@ -183,7 +181,10 @@ fun GameScreen(
                     .border(1.dp, Purple) //테두리 검정
             ) {
                 sortedPlayerList.forEach { userInfo ->
-                    PlayerCard(name = userInfo.userName, score = userInfo.score) //카드에 삽입 및 추가
+                    PlayerCard(
+                        name = userInfo.userName,
+                        score = userInfo.score
+                    ) //카드에 삽입 및 추가
                 }
             } // ← 좌측 Column 닫힘
 
@@ -291,41 +292,55 @@ fun CategorySelect(
             border = BorderStroke(1.dp, Purple),
             colors = CardDefaults.cardColors(containerColor = White)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Text(
-                    text = "카테고리 선택",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DarkPurple
-                )
-                listOf(
-                    "과일" to 1,
-                    "국가" to 2,
-                    "요리" to 3,
-                    "동물" to 4,
-                    "사자성어" to 5
-                ).forEach { (name, number) ->
-                    Button(
-                        onClick = { onCategorySelect(number) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Purple),
-                        shape = RectangleShape,
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                val cardHeight = maxHeight  //카드 높이 가져오기
+                val titleSize = (cardHeight.value * 0.06f).sp  //높이의 6%
+                val buttonTextSize = (cardHeight.value * 0.05f).sp  //높이의 5%
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .padding(vertical = 4.dp)
-                    ) {
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    )
+                    {
                         Text(
-                            text = name,
-                            color = White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
+                            text = "카테고리 선택",
+                            fontSize = titleSize, //동적 크기
+                            fontWeight = FontWeight.Bold,
+                            color = DarkPurple,
+                            textAlign = TextAlign.Center
                         )
+                    }
+                    listOf(
+                        "과일" to 1,
+                        "국가" to 2,
+                        "요리" to 3,
+                        "동물" to 4,
+                        "사자성어" to 5
+                    ).forEach { (name, number) ->
+                        Button(
+                            onClick = { onCategorySelect(number) },
+                            colors = ButtonDefaults.buttonColors(containerColor = Purple),
+                            shape = RectangleShape,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .padding(vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = name,
+                                color = White,
+                                fontSize = buttonTextSize, //동적 크기
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
@@ -342,6 +357,7 @@ fun PlayerCard(
 //사용자 UI 설정
     name: String, //사용자명
     score: Int = 0, //사용자 점수
+    modifier:Modifier = Modifier
 ) {
     Card(
         colors = CardDefaults.cardColors(
@@ -349,15 +365,23 @@ fun PlayerCard(
         ),
         modifier = Modifier
             .fillMaxWidth() //너비 최대(할당된 비율을 꽉 채움)
-            .height(60.dp) //크기:60
             .padding(4.dp), //사이간격: 4
         border = BorderStroke(1.dp, Purple), //테두리
         shape = RectangleShape //사각형으로 카드 Radius 변경
         ){
-        Text(
-            text = "$name 점수: $score",
-            modifier = Modifier.padding(8.dp)
-        )
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(4f),  // ← height 대신 가로:세로 비율 4:1
+            contentAlignment = Alignment.CenterStart
+        ) {
+            val fontSize = (maxHeight.value * 0.4f).sp
+            Text(
+                text = "$name 점수: $score",
+                fontSize = fontSize,
+                modifier = Modifier.padding(8.dp)
+            )
+        }
     }
 }
 
@@ -369,14 +393,20 @@ fun PlayerCard(
 fun RoundDisplay(
     countRound: Int
 ) {
-    Text(
-        color = DarkPurple,
-        text = "${countRound}라운드 / 5라운드",
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
-        textAlign = TextAlign.Center
-    )
+            .padding(8.dp)
+    ) {
+        val fontSize = 16.sp  // ← 높이 기준
+        Text(
+            color = DarkPurple,
+            text = "${countRound}라운드 / 5라운드",
+            fontSize = fontSize,  // ← 동적 크기
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+    }
 }
 
 // =====================
@@ -389,17 +419,24 @@ fun TimerDisplay(
 ) {
     val timerValues by connection.timerViewModel.messages.collectAsState()
     val time = timerValues.firstOrNull() ?: 0
-
-    Text(
-        text = "${time}초",
-        fontSize = 20.sp,
-        fontWeight = FontWeight.Bold,
-        color = if (time < 5) Coral else DarkPurple,  // ← 5초 미만이면 Coral, 아니면 DarkPurple
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
-        textAlign = TextAlign.Center
-    )
+            .padding(8.dp)
+    ) {
+
+        val fontSize = (maxHeight.value * 1f).sp
+        Text(
+            text = "${time}초",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (time < 5) Coral else DarkPurple,  // ← 5초 미만이면 Coral, 아니면 DarkPurple
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            textAlign = TextAlign.Center
+        )
+    }
 }
 
 // =====================
@@ -420,13 +457,14 @@ fun WordDisplay(
         border = BorderStroke(1.dp, Color.Black),
         shape = RectangleShape
     ) {
-        Box(
+        BoxWithConstraints(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center //중앙 정렬
         ) {
+            val fontSize = (maxHeight.value * 0.4f).sp
             Text(
                 text = word,
-                fontSize = 60.sp, //크기 설정
+                fontSize = fontSize, //크기 설정
                 fontWeight = FontWeight.Bold, //굵기 설정
                 //텍스트 패딩은 중앙 정렬이라 필요 없어서 제거
             )
@@ -448,17 +486,23 @@ fun CategoryDisplay(
         colors = CardDefaults.cardColors(
             containerColor = White
         ),
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         border = BorderStroke(1.dp, Black),
         shape = RectangleShape
     ){
-        Text(
-            text = "카테고리: $quizCategory",
-            modifier = Modifier.fillMaxWidth()
-                .padding(8.dp),
-            textAlign = TextAlign.Center
-        )
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            val fontSize = (maxHeight.value * 0.4f).sp
+            Text(
+                text = "카테고리: $quizCategory",
+                fontSize = fontSize,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(8.dp),
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 // =====================
@@ -474,8 +518,8 @@ fun HintDisplay(
     hardHint: String = ""
 ) {
     val hints by connection.hintViewModel.messages.collectAsState()
-    Column(modifier = modifier){ //힌트칸 3개
-        Card(
+    Column(modifier = modifier) { //힌트칸 3개
+        Card( //쉬운 힌트
             colors = CardDefaults.cardColors(
                 containerColor = White  // ← 흰색 배경
             ),
@@ -485,17 +529,19 @@ fun HintDisplay(
             border = BorderStroke(1.dp, Black),
             shape = RectangleShape
         ) {
-            Box(
+            BoxWithConstraints(  // ← 교체
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
+                val fontSize = (maxHeight.value * 0.3f).sp  // ← 추가
                 Text(
-                    text = if (hints.size > 0) {hints[0]} else "", // 받아온 힌트 표시
+                    text = if (hints.size > 0) hints[0] else "",
+                    fontSize = fontSize,  // ← 추가
                     modifier = Modifier.padding(8.dp)
                 )
             }
         }
-        Card(
+        Card( //보통 힌트
             colors = CardDefaults.cardColors(
                 containerColor = White  // ← 흰색 배경
             ),
@@ -505,17 +551,19 @@ fun HintDisplay(
             border = BorderStroke(1.dp, Color.Black),
             shape = RectangleShape
         ) {
-            Box(
+            BoxWithConstraints(  // ← 교체
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
+                val fontSize = (maxHeight.value * 0.3f).sp  // ← 추가
                 Text(
-                    text =  if (hints.size > 1) {hints[1]} else "", // 받아온 힌트 표시 normal
+                    text = if (hints.size > 1) hints[1] else "",
+                    fontSize = fontSize,  // ← 추가
                     modifier = Modifier.padding(8.dp)
                 )
             }
         }
-        Card(
+        Card( //아려움 힌트
             colors = CardDefaults.cardColors(
                 containerColor = White  // ← 흰색 배경
             ),
@@ -525,19 +573,20 @@ fun HintDisplay(
             border = BorderStroke(1.dp, Color.Black),
             shape = RectangleShape
         ) {
-            Box(
+            BoxWithConstraints(  // ← 교체
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
+                val fontSize = (maxHeight.value * 0.3f).sp  // ← 추가
                 Text(
-                    text = if (hints.size > 2) {hints[2]} else "",  // 받아온 힌트 표시
+                    text = if (hints.size > 2) hints[2] else "",
+                    fontSize = fontSize,  // ← 추가
                     modifier = Modifier.padding(8.dp)
                 )
             }
         }
     }
 }
-
 // ========================
 // 정답 입력창
 // 사용자가 문자를 입력하는 곳
@@ -547,10 +596,11 @@ fun WordInput(
     input: String,
     onInputChange: (String) -> Unit
 ) {
-    OutlinedTextField(
+    OutlinedTextField(  // ← BoxWithConstraints 제거
         value = input,
         onValueChange = onInputChange,
         placeholder = { Text("정답을 입력하세요") },
+        // textStyle 제거
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Purple,
             unfocusedBorderColor = PurpleHalf
@@ -560,7 +610,6 @@ fun WordInput(
             .padding(4.dp)
     )
 }
-
 // =======================
 // 채팅/오답 목록
 // 우측에 표시되는 오답 리스트
@@ -578,27 +627,31 @@ fun ChatList(
             listState.animateScrollToItem(chatMessages.size - 1)
         }
     }
-    LazyColumn(
-        modifier = modifier,
-        state = listState
-    ) {
-        items(chatMessages) { chatMessage -> //채팅메시지를 아래에 표시
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp),
-                horizontalArrangement = if (chatMessage.userName == myName)
-                    Arrangement.End //오른쪽에 채팅 배치(나)
-                else
-                    Arrangement.Start //왼쪽에 채팅 배치
-            ) {
-                Card(
-                    border = BorderStroke(1.dp, Color.Gray)
+    BoxWithConstraints(modifier = modifier) {  // ← 추가
+        val fontSize = (maxHeight.value * 0.03f).sp  // ← 너비 기준 3%
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            state = listState
+        ) {
+            items(chatMessages) { chatMessage -> //채팅메시지를 아래에 표시
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(4.dp),
+                    horizontalArrangement = if (chatMessage.userName == myName)
+                        Arrangement.End //오른쪽에 채팅 배치(나)
+                    else
+                        Arrangement.Start //왼쪽에 채팅 배치
                 ) {
-                    Text(
-                        text = "${chatMessage.userName}: ${chatMessage.message}",
-                        modifier = Modifier.padding(8.dp)
-                    )
+                    Card(
+                        border = BorderStroke(1.dp, Color.Gray)
+                    ) {
+                        Text(
+                            text = "${chatMessage.userName}: ${chatMessage.message}",
+                            fontSize = fontSize, //동적 크기
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
                 }
             }
         }
@@ -625,36 +678,45 @@ fun GameOver(
         border = BorderStroke(1.dp, Color.Black),
         shape = RectangleShape
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp), //전체 화면 채우기 수정해야함 작은 화면에 표시할 에정
-            horizontalAlignment = Alignment.CenterHorizontally, //중앙 표시
-            verticalArrangement = Arrangement.Center // 중앙표시 2
-        ) {
-            Text(
-                text = "게임 종료!",
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(16.dp) //중앙으로 변경할 예정
-            )
-            // 플레이어별 결과 표시
-            myResult?.let{ userInfo -> //myResult가 있을 시 실행
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {  // ← 추가
+            val titleSize = (maxHeight.value * 0.1f).sp  // ← 제목 크기
+            val textSize = (maxHeight.value * 0.07f).sp  // ← 내용 크기
+            val buttonSize = (maxHeight.value * 0.07f).sp  // ← 버튼 크기
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
                 Text(
-                    text = "${userInfo.userName} 점수: ${userInfo.score}", //이동욱 점수:150 으로 표현
+                    text = "게임 종료!",
+                    fontSize = titleSize,  // ← 동적 크기
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(16.dp)
+                )
+                myResult?.let { userInfo ->
+                    Text(
+                        text = "${userInfo.userName} 점수: ${userInfo.score}",
+                        fontSize = textSize,  // ← 동적 크기
+                        modifier = Modifier.padding(8.dp),
+                        textAlign = TextAlign.Center
+                    )
+                } ?: Text(
+                    text = "결과를 찾을 수 없어요",
+                    fontSize = textSize,  // ← 동적 크기
                     modifier = Modifier.padding(8.dp),
                     textAlign = TextAlign.Center
                 )
-            } ?: Text( //반환되는 값이 없을 때(없으면 오류인듯)
-                text = "결과를 찾을 수 없어요",
-                modifier = Modifier.padding(8.dp),
-                textAlign = TextAlign.Center
-            )
-            // 확인 버튼
-            Button(onClick = onConfirm) {
-                Text("확인")
+                Button(onClick = onConfirm) {
+                    Text(
+                        text = "확인",
+                        fontSize = buttonSize  // ← 동적 크기
+                    )
+                }
             }
-        }
+        }  // ← BoxWithConstraints 닫기
     }
 }
 // =====================
